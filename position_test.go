@@ -76,6 +76,59 @@ func TestPositionAtEndOfString(t *testing.T) {
 	}
 }
 
+func TestPositionAtEndOfStringLine(t *testing.T) {
+	tests := map[string]struct {
+		input string
+		cols  istrings.Width
+		line  int
+		want  Position
+	}{
+		"last line overflows": {
+			input: `hi
+foobar`,
+			cols: 3,
+			line: 1,
+			want: Position{
+				X: 2,
+				Y: 1,
+			},
+		},
+		"last line is in the middle": {
+			input: `hi
+foo hey
+bar boo ba
+baz`,
+			cols: 20,
+			line: 2,
+			want: Position{
+				X: 10,
+				Y: 2,
+			},
+		},
+		"last line is out of bounds": {
+			input: `hi
+foo hey
+bar boo ba
+baz`,
+			cols: 20,
+			line: 20,
+			want: Position{
+				X: 3,
+				Y: 3,
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := positionAtEndOfStringLine(tc.input, tc.cols, tc.line)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatalf(diff)
+			}
+		})
+	}
+}
+
 func TestPositionAdd(t *testing.T) {
 	tests := map[string]struct {
 		left  Position
