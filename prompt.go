@@ -146,9 +146,8 @@ func (p *Prompt) feed(b []byte) (shouldExit bool, userInput *UserInput) {
 	p.buf.lastKeyStroke = key
 	// completion
 	completing := p.completion.Completing()
-	p.handleCompletionKeyBinding(key, completing)
+	p.handleCompletionKeyBinding(b, key, completing)
 
-keySwitch:
 	switch key {
 	case Enter, ControlJ, ControlM:
 		indent, execute := p.executeOnEnterCallback(p.buf.Text(), p.renderer.indentSize)
@@ -169,40 +168,6 @@ keySwitch:
 		if userInput.input != "" {
 			p.history.Add(userInput.input)
 		}
-	case Tab:
-		if len(p.completion.GetSuggestions()) > 0 {
-			// If there are any suggestions, select the next one
-			p.completion.Next()
-			break
-		}
-
-		// if there are no suggestions insert indentation
-		newBytes := make([]byte, 0, len(b))
-		for _, byt := range b {
-			switch byt {
-			case '\t':
-				for i := 0; i < p.renderer.indentSize; i++ {
-					newBytes = append(newBytes, IndentUnit)
-				}
-			default:
-				newBytes = append(newBytes, byt)
-			}
-		}
-		p.buf.InsertText(string(newBytes), false, true)
-	case BackTab:
-		if len(p.completion.GetSuggestions()) > 0 {
-			// If there are any suggestions, select the previous one
-			p.completion.Previous()
-			break
-		}
-
-		text := p.buf.Document().CurrentLineBeforeCursor()
-		for _, char := range text {
-			if char != IndentUnit {
-				break keySwitch
-			}
-		}
-		p.buf.DeleteBeforeCursor(istrings.RuneNumber(p.renderer.indentSize))
 	case ControlC:
 		p.renderer.BreakLine(p.buf, p.lexer)
 		p.buf = NewBuffer()
@@ -258,7 +223,8 @@ keySwitch:
 	return
 }
 
-func (p *Prompt) handleCompletionKeyBinding(key Key, completing bool) {
+func (p *Prompt) handleCompletionKeyBinding(b []byte, key Key, completing bool) {
+keySwitch:
 	switch key {
 	case Down:
 		if completing || p.completionOnDown {
@@ -270,6 +236,40 @@ func (p *Prompt) handleCompletionKeyBinding(key Key, completing bool) {
 		if completing {
 			p.completion.Previous()
 		}
+	case Tab:
+		if len(p.completion.GetSuggestions()) > 0 {
+			// If there are any suggestions, select the next one
+			p.completion.Next()
+			break
+		}
+
+		// if there are no suggestions insert indentation
+		newBytes := make([]byte, 0, len(b))
+		for _, byt := range b {
+			switch byt {
+			case '\t':
+				for i := 0; i < p.renderer.indentSize; i++ {
+					newBytes = append(newBytes, IndentUnit)
+				}
+			default:
+				newBytes = append(newBytes, byt)
+			}
+		}
+		p.buf.InsertText(string(newBytes), false, true)
+	case BackTab:
+		if len(p.completion.GetSuggestions()) > 0 {
+			// If there are any suggestions, select the previous one
+			p.completion.Previous()
+			break
+		}
+
+		text := p.buf.Document().CurrentLineBeforeCursor()
+		for _, char := range text {
+			if char != IndentUnit {
+				break keySwitch
+			}
+		}
+		p.buf.DeleteBeforeCursor(istrings.RuneNumber(p.renderer.indentSize))
 	default:
 		if s, ok := p.completion.GetSelectedSuggestion(); ok {
 			w := p.buf.Document().GetWordBeforeCursorUntilSeparator(p.completion.wordSeparator)
