@@ -121,6 +121,8 @@ func (p *Prompt) Run() {
 			}
 		case w := <-winSizeCh:
 			p.renderer.UpdateWinSize(w)
+			p.buf.ResetStartLine()
+			p.buf.RecalculateStartLine(p.renderer.UserInputColumns(), int(p.renderer.row))
 			p.renderer.Render(p.buf, p.completion, p.lexer)
 		case code := <-exitCh:
 			p.renderer.BreakLine(p.buf, p.lexer)
@@ -148,17 +150,21 @@ func (p *Prompt) feed(b []byte) (shouldExit bool, userInput *UserInput) {
 	completing := p.completion.Completing()
 	p.handleCompletionKeyBinding(b, key, completing)
 
+	cols := p.renderer.UserInputColumns()
+	rows := int(p.renderer.row)
+
 	switch key {
 	case Enter, ControlJ, ControlM:
 		indent, execute := p.executeOnEnterCallback(p.buf.Text(), p.renderer.indentSize)
 		if !execute {
-			p.buf.NewLine(false)
+			p.buf.NewLine(cols, rows, false)
+
 			var indentStrBuilder strings.Builder
 			indentUnitCount := indent * p.renderer.indentSize
 			for i := 0; i < indentUnitCount; i++ {
 				indentStrBuilder.WriteRune(IndentUnit)
 			}
-			p.buf.InsertText(indentStrBuilder.String(), false, true)
+			p.buf.InsertTextMoveCursor(indentStrBuilder.String(), cols, rows, false)
 			break
 		}
 
@@ -175,14 +181,14 @@ func (p *Prompt) feed(b []byte) (shouldExit bool, userInput *UserInput) {
 	case Up, ControlP:
 		line := p.buf.Document().CursorPositionRow()
 		if line > 0 {
-			p.buf.CursorUp(1)
+			p.buf.CursorUp(1, cols, rows)
 			break
 		}
 		if completing {
 			break
 		}
 
-		if newBuf, changed := p.history.Older(p.buf); changed {
+		if newBuf, changed := p.history.Older(p.buf, cols, rows); changed {
 			p.buf = newBuf
 		}
 
@@ -190,7 +196,7 @@ func (p *Prompt) feed(b []byte) (shouldExit bool, userInput *UserInput) {
 		endOfTextRow := p.buf.Document().TextEndPositionRow()
 		row := p.buf.Document().CursorPositionRow()
 		if endOfTextRow > row {
-			p.buf.CursorDown(1)
+			p.buf.CursorDown(1, cols, rows)
 			break
 		}
 
@@ -198,7 +204,7 @@ func (p *Prompt) feed(b []byte) (shouldExit bool, userInput *UserInput) {
 			break
 		}
 
-		if newBuf, changed := p.history.Newer(p.buf); changed {
+		if newBuf, changed := p.history.Newer(p.buf, cols, rows); changed {
 			p.buf = newBuf
 		}
 		return
@@ -208,7 +214,7 @@ func (p *Prompt) feed(b []byte) (shouldExit bool, userInput *UserInput) {
 			return
 		}
 	case NotDefined:
-		if p.handleASCIICodeBinding(b) {
+		if p.handleASCIICodeBinding(b, cols, rows) {
 			return
 		}
 		char, _ := utf8.DecodeRune(b)
@@ -216,14 +222,17 @@ func (p *Prompt) feed(b []byte) (shouldExit bool, userInput *UserInput) {
 			return
 		}
 
-		p.buf.InsertText(string(b), false, true)
+		p.buf.InsertTextMoveCursor(string(b), cols, rows, false)
 	}
 
-	shouldExit = p.handleKeyBinding(key)
+	shouldExit = p.handleKeyBinding(key, cols, rows)
 	return
 }
 
 func (p *Prompt) handleCompletionKeyBinding(b []byte, key Key, completing bool) {
+	cols := p.renderer.UserInputColumns()
+	rows := int(p.renderer.row)
+
 keySwitch:
 	switch key {
 	case Down:
@@ -255,7 +264,7 @@ keySwitch:
 				newBytes = append(newBytes, byt)
 			}
 		}
-		p.buf.InsertText(string(newBytes), false, true)
+		p.buf.InsertTextMoveCursor(string(newBytes), cols, rows, false)
 	case BackTab:
 		if len(p.completion.GetSuggestions()) > 0 {
 			// If there are any suggestions, select the previous one
@@ -269,25 +278,25 @@ keySwitch:
 				break keySwitch
 			}
 		}
-		p.buf.DeleteBeforeCursor(istrings.RuneNumber(p.renderer.indentSize))
+		p.buf.DeleteBeforeCursor(istrings.RuneNumber(p.renderer.indentSize), cols, rows)
 	default:
 		if s, ok := p.completion.GetSelectedSuggestion(); ok {
 			w := p.buf.Document().GetWordBeforeCursorUntilSeparator(p.completion.wordSeparator)
 			if w != "" {
-				p.buf.DeleteBeforeCursor(istrings.RuneNumber(len([]rune(w))))
+				p.buf.DeleteBeforeCursor(istrings.RuneNumber(len([]rune(w))), cols, rows)
 			}
-			p.buf.InsertText(s.Text, false, true)
+			p.buf.InsertTextMoveCursor(s.Text, cols, rows, false)
 		}
 		p.completion.Reset()
 	}
 }
 
-func (p *Prompt) handleKeyBinding(key Key) bool {
+func (p *Prompt) handleKeyBinding(key Key, cols istrings.Width, rows int) bool {
 	shouldExit := false
 	for i := range commonKeyBindings {
 		kb := commonKeyBindings[i]
 		if kb.Key == key {
-			kb.Fn(p.buf)
+			kb.Fn(p.buf, cols, rows)
 		}
 	}
 
@@ -296,7 +305,7 @@ func (p *Prompt) handleKeyBinding(key Key) bool {
 		for i := range emacsKeyBindings {
 			kb := emacsKeyBindings[i]
 			if kb.Key == key {
-				kb.Fn(p.buf)
+				kb.Fn(p.buf, cols, rows)
 			}
 		}
 	}
@@ -305,7 +314,7 @@ func (p *Prompt) handleKeyBinding(key Key) bool {
 	for i := range p.keyBindings {
 		kb := p.keyBindings[i]
 		if kb.Key == key {
-			kb.Fn(p.buf)
+			kb.Fn(p.buf, cols, rows)
 		}
 	}
 	if p.exitChecker != nil && p.exitChecker(p.buf.Text(), false) {
@@ -314,11 +323,11 @@ func (p *Prompt) handleKeyBinding(key Key) bool {
 	return shouldExit
 }
 
-func (p *Prompt) handleASCIICodeBinding(b []byte) bool {
+func (p *Prompt) handleASCIICodeBinding(b []byte, cols istrings.Width, rows int) bool {
 	checked := false
 	for _, kb := range p.ASCIICodeBindings {
 		if bytes.Equal(kb.ASCIICode, b) {
-			kb.Fn(p.buf)
+			kb.Fn(p.buf, cols, rows)
 			checked = true
 		}
 	}

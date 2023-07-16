@@ -58,8 +58,8 @@ func (t *PosixReader) GetWinSize() *WinSize {
 		// If this errors, we simply return the default window size as
 		// it's our best guess.
 		return &WinSize{
-			Row: 25,
-			Col: 80,
+			Row: DefRowCount,
+			Col: DefColCount,
 		}
 	}
 	return &WinSize{

@@ -8,7 +8,7 @@ import (
 
 func TestEmacsKeyBindings(t *testing.T) {
 	buf := NewBuffer()
-	buf.InsertText("abcde", false, true)
+	buf.InsertTextMoveCursor("abcde", DefColCount, DefRowCount, false)
 	if buf.cursorPosition != istrings.RuneNumber(len("abcde")) {
 		t.Errorf("Want %d, but got %d", len("abcde"), buf.cursorPosition)
 	}
@@ -30,7 +30,7 @@ func applyEmacsKeyBind(buf *Buffer, key Key) {
 	for i := range emacsKeyBindings {
 		kb := emacsKeyBindings[i]
 		if kb.Key == key {
-			kb.Fn(buf)
+			kb.Fn(buf, DefColCount, DefRowCount)
 		}
 	}
 }

@@ -11,6 +11,11 @@ type WinSize struct {
 	Col uint16
 }
 
+const (
+	DefColCount = 80 // Default column count of the terminal
+	DefRowCount = 25 // Default row count of the terminal
+)
+
 // Reader is an interface to abstract input layer.
 type Reader interface {
 	// Open should be called before starting reading

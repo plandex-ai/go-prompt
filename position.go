@@ -47,13 +47,20 @@ func (p Position) Subtract(other Position) Position {
 
 // positionAtEndOfString calculates the position of the
 // p at the end of the given string.
+func positionAtEndOfStringLine(str string, columns istrings.Width, line int) Position {
+	pos := positionAtEndOfReaderLine(strings.NewReader(str), columns, line)
+	return pos
+}
+
+// positionAtEndOfString calculates the position
+// at the end of the given string.
 func positionAtEndOfString(str string, columns istrings.Width) Position {
 	pos := positionAtEndOfReader(strings.NewReader(str), columns)
 	return pos
 }
 
-// positionAtEndOfReader calculates the position of the
-// p at the end of the given io.Reader.
+// positionAtEndOfReader calculates the position
+// at the end of the given io.Reader.
 func positionAtEndOfReader(reader io.RuneReader, columns istrings.Width) Position {
 	var down int
 	var right istrings.Width
@@ -83,6 +90,58 @@ charLoop:
 			right += istrings.Width(runewidth.RuneWidth(char))
 			if right == columns {
 				right = 0
+				down++
+			}
+		}
+	}
+
+	return Position{
+		X: right,
+		Y: down,
+	}
+}
+
+// positionAtEndOfReaderLine calculates the position
+// at the given line of the given io.Reader.
+func positionAtEndOfReaderLine(reader io.RuneReader, columns istrings.Width, line int) Position {
+	var down int
+	var right istrings.Width
+
+charLoop:
+	for {
+		char, _, err := reader.ReadRune()
+		if err != nil {
+			break charLoop
+		}
+
+		switch char {
+		case '\r':
+			char, _, err := reader.ReadRune()
+			if err != nil {
+				break charLoop
+			}
+
+			if char == '\n' {
+				if down == line {
+					break charLoop
+				}
+				down++
+				right = 0
+			}
+		case '\n':
+			if down == line {
+				break charLoop
+			}
+			down++
+			right = 0
+		default:
+			right += istrings.Width(runewidth.RuneWidth(char))
+			if right > columns {
+				if down == line {
+					right = columns - 1
+					break charLoop
+				}
+				right = istrings.Width(runewidth.RuneWidth(char))
 				down++
 			}
 		}

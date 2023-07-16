@@ -1,7 +1,11 @@
 package prompt
 
+import (
+	istrings "github.com/elk-language/go-prompt/strings"
+)
+
 // KeyBindFunc receives buffer and processed it.
-type KeyBindFunc func(*Buffer)
+type KeyBindFunc func(buffer *Buffer, columns istrings.Width, rows int)
 
 // KeyBind represents which key should do what operation.
 type KeyBind struct {
