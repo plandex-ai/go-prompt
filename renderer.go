@@ -223,15 +223,6 @@ func (r *Renderer) Render(buffer *Buffer, completion *CompletionManager, lexer L
 	cursor := positionAtEndOfStringLine(text, col, endLine)
 	cursor.X += prefixWidth
 
-	// prepare area
-	// y := cursor.Y
-
-	// h := y + 1 + int(completion.max)
-	// if h > int(r.row) || completionMargin > r.col {
-	// 	r.renderWindowTooSmall()
-	// 	return
-	// }
-
 	// Rendering
 	r.out.HideCursor()
 	defer r.out.ShowCursor()
@@ -282,6 +273,7 @@ func (r *Renderer) renderText(lexer Lexer, buffer *Buffer) {
 	col := r.col - prefixWidth
 	multilinePrefix := r.getMultilinePrefix(prefix)
 	firstIteration := true
+	endLine := buffer.startLine + int(r.row)
 	var lineBuffer strings.Builder
 	var lineCharIndex istrings.Width
 	var lineNumber int
@@ -292,7 +284,7 @@ func (r *Renderer) renderText(lexer Lexer, buffer *Buffer) {
 			if lineNumber < buffer.startLine {
 				continue
 			}
-			if lineNumber >= buffer.startLine+int(r.row) {
+			if lineNumber >= endLine {
 				break
 			}
 			lineBuffer.WriteRune('\n')
@@ -380,6 +372,10 @@ func (r *Renderer) lex(lexer Lexer, buffer *Buffer) {
 	multilinePrefix := r.getMultilinePrefix(prefix)
 	r.renderPrefix(prefix)
 	var lineCharIndex istrings.Width
+	var lineNumber int
+	endLine := buffer.startLine + int(r.row)
+
+tokenLoop:
 	for {
 		token, ok := lexer.Next()
 		if !ok {
@@ -391,11 +387,17 @@ func (r *Renderer) lex(lexer Lexer, buffer *Buffer) {
 
 		var lineBuffer strings.Builder
 
+	charLoop:
 		for _, char := range text {
 			if lineCharIndex >= col || char == '\n' {
-				if char != '\n' {
-					lineBuffer.WriteByte('\n')
+				lineNumber++
+				if lineNumber < buffer.startLine {
+					continue charLoop
 				}
+				if lineNumber >= endLine {
+					break tokenLoop
+				}
+				lineBuffer.WriteByte('\n')
 				r.writeString(lineBuffer.String(), token.Color())
 				r.renderPrefix(multilinePrefix)
 				lineCharIndex = 0
@@ -404,9 +406,12 @@ func (r *Renderer) lex(lexer Lexer, buffer *Buffer) {
 					lineBuffer.WriteRune(char)
 					lineCharIndex += istrings.GetRuneWidth(char)
 				}
-				continue
+				continue charLoop
 			}
 
+			if lineNumber < buffer.startLine {
+				continue charLoop
+			}
 			lineBuffer.WriteRune(char)
 			lineCharIndex += istrings.GetRuneWidth(char)
 		}

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/elk-language/go-prompt"
 )
@@ -19,9 +18,7 @@ func main() {
 func lexer(line string) []prompt.Token {
 	var elements []prompt.Token
 
-	strArr := strings.Split(line, "")
-
-	for i, value := range strArr {
+	for i, value := range line {
 		var color prompt.Color
 		// every even char must be green.
 		if i%2 == 0 {
@@ -29,7 +26,7 @@ func lexer(line string) []prompt.Token {
 		} else {
 			color = prompt.White
 		}
-		element := prompt.NewSimpleToken(color, value)
+		element := prompt.NewSimpleToken(color, string(value))
 
 		elements = append(elements, element)
 	}

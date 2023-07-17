@@ -2,8 +2,6 @@ package prompt
 
 import (
 	"bytes"
-	"fmt"
-	"log"
 	"os"
 	"strings"
 	"time"
@@ -134,14 +132,14 @@ func (p *Prompt) Run() {
 	}
 }
 
-func Log(format string, a ...any) {
-	f, err := os.OpenFile("log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
-	}
-	defer f.Close()
-	fmt.Fprintf(f, format, a...)
-}
+// func Log(format string, a ...any) {
+// 	f, err := os.OpenFile("log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+// 	if err != nil {
+// 		log.Fatalf("error opening file: %v", err)
+// 	}
+// 	defer f.Close()
+// 	fmt.Fprintf(f, format, a...)
+// }
 
 func (p *Prompt) feed(b []byte) (shouldExit bool, userInput *UserInput) {
 	key := GetKey(b)
