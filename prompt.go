@@ -55,6 +55,7 @@ type Prompt struct {
 	exitChecker            ExitChecker
 	executeOnEnterCallback ExecuteOnEnterCallback
 	skipClose              bool
+	completionReset        bool
 }
 
 // UserInput is the struct that contains the user input context.
@@ -236,6 +237,8 @@ func (p *Prompt) feed(b []byte) (shouldExit bool, rerender bool, userInput *User
 func (p *Prompt) handleCompletionKeyBinding(b []byte, key Key, completing bool) {
 	cols := p.renderer.UserInputColumns()
 	rows := int(p.renderer.row)
+	completionLen := len(p.completion.tmp)
+	p.completionReset = false
 
 keySwitch:
 	switch key {
@@ -250,7 +253,7 @@ keySwitch:
 			p.completion.Previous()
 		}
 	case Tab:
-		if len(p.completion.GetSuggestions()) > 0 {
+		if completionLen > 0 {
 			// If there are any suggestions, select the next one
 			p.completion.Next()
 			break
@@ -270,7 +273,7 @@ keySwitch:
 		}
 		p.Buffer.InsertTextMoveCursor(string(newBytes), cols, rows, false)
 	case BackTab:
-		if len(p.completion.GetSuggestions()) > 0 {
+		if completionLen > 0 {
 			// If there are any suggestions, select the previous one
 			p.completion.Previous()
 			break
@@ -290,6 +293,9 @@ keySwitch:
 				p.Buffer.DeleteBeforeCursor(istrings.RuneNumber(len([]rune(w))), cols, rows)
 			}
 			p.Buffer.InsertTextMoveCursor(s.Text, cols, rows, false)
+		}
+		if completionLen > 0 {
+			p.completionReset = true
 		}
 		p.completion.Reset()
 	}
@@ -453,14 +459,16 @@ func (p *Prompt) CursorLeft(count istrings.RuneNumber) bool {
 	cols := p.renderer.UserInputColumns()
 	previousCursor := b.DisplayCursorPosition(cols)
 
-	l := b.Document().GetCursorLeftPosition(count)
-	b.cursorPosition += l
+	rerender := p.Buffer.CursorLeft(count, cols, p.renderer.row) || p.completionReset
+	if rerender {
+		return true
+	}
 
 	newCursor := b.DisplayCursorPosition(cols)
 	p.renderer.previousCursor = newCursor
 	p.renderer.move(previousCursor, newCursor)
 	p.renderer.flush()
-	return b.RecalculateStartLine(cols, p.renderer.row)
+	return false
 }
 
 // Move the cursor to the right on the current line.
@@ -470,14 +478,16 @@ func (p *Prompt) CursorRight(count istrings.RuneNumber) bool {
 	cols := p.renderer.UserInputColumns()
 	previousCursor := b.DisplayCursorPosition(cols)
 
-	l := b.Document().GetCursorRightPosition(count)
-	b.cursorPosition += l
+	rerender := p.Buffer.CursorRight(count, cols, p.renderer.row) || p.completionReset
+	if rerender {
+		return true
+	}
 
 	newCursor := b.DisplayCursorPosition(cols)
 	p.renderer.previousCursor = newCursor
 	p.renderer.move(previousCursor, newCursor)
 	p.renderer.flush()
-	return b.RecalculateStartLine(cols, p.renderer.row)
+	return false
 }
 
 // Move the cursor up.
@@ -487,14 +497,16 @@ func (p *Prompt) CursorUp(count int) bool {
 	cols := p.renderer.UserInputColumns()
 	previousCursor := b.DisplayCursorPosition(cols)
 
-	orig := b.Document().CursorPositionCol()
-	b.cursorPosition += b.Document().GetCursorUpPosition(count, orig)
+	rerender := p.Buffer.CursorUp(count, cols, p.renderer.row) || p.completionReset
+	if rerender {
+		return true
+	}
 
 	newCursor := b.DisplayCursorPosition(cols)
 	p.renderer.previousCursor = newCursor
 	p.renderer.move(previousCursor, newCursor)
 	p.renderer.flush()
-	return b.RecalculateStartLine(cols, p.renderer.row)
+	return false
 }
 
 // Move the cursor down.
@@ -504,14 +516,16 @@ func (p *Prompt) CursorDown(count int) bool {
 	cols := p.renderer.UserInputColumns()
 	previousCursor := b.DisplayCursorPosition(cols)
 
-	orig := b.Document().CursorPositionCol()
-	b.cursorPosition += b.Document().GetCursorDownPosition(count, orig)
+	rerender := p.Buffer.CursorDown(count, cols, p.renderer.row) || p.completionReset
+	if rerender {
+		return true
+	}
 
 	newCursor := b.DisplayCursorPosition(cols)
 	p.renderer.previousCursor = newCursor
 	p.renderer.move(previousCursor, newCursor)
 	p.renderer.flush()
-	return b.RecalculateStartLine(cols, p.renderer.row)
+	return false
 }
 
 func (p *Prompt) Close() {

@@ -129,6 +129,40 @@ func (b *Buffer) setDocument(d *Document, columns istrings.Width, rows int) {
 	b.RecalculateStartLine(columns, rows)
 }
 
+// Move to the left on the current line.
+// Returns true when the view should be rerendered.
+func (b *Buffer) CursorLeft(count istrings.RuneNumber, columns istrings.Width, rows int) bool {
+	l := b.Document().GetCursorLeftPosition(count)
+	b.cursorPosition += l
+	return b.RecalculateStartLine(columns, rows)
+}
+
+// Move to the right on the current line.
+// Returns true when the view should be rerendered.
+func (b *Buffer) CursorRight(count istrings.RuneNumber, columns istrings.Width, rows int) bool {
+	l := b.Document().GetCursorRightPosition(count)
+	b.cursorPosition += l
+	return b.RecalculateStartLine(columns, rows)
+}
+
+// CursorUp move cursor to the previous line.
+// (for multi-line edit).
+// Returns true when the view should be rerendered.
+func (b *Buffer) CursorUp(count int, columns istrings.Width, rows int) bool {
+	orig := b.Document().CursorPositionCol()
+	b.cursorPosition += b.Document().GetCursorUpPosition(count, orig)
+	return b.RecalculateStartLine(columns, rows)
+}
+
+// CursorDown move cursor to the next line.
+// (for multi-line edit).
+// Returns true when the view should be rerendered.
+func (b *Buffer) CursorDown(count int, columns istrings.Width, rows int) bool {
+	orig := b.Document().CursorPositionCol()
+	b.cursorPosition += b.Document().GetCursorDownPosition(count, orig)
+	return b.RecalculateStartLine(columns, rows)
+}
+
 // DeleteBeforeCursor delete specified number of characters before cursor and return the deleted text.
 func (b *Buffer) DeleteBeforeCursor(count istrings.RuneNumber, columns istrings.Width, rows int) (deleted string) {
 	debug.Assert(count >= 0, "count should be positive")
