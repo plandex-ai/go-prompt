@@ -1,5 +1,9 @@
 package prompt
 
+import (
+	istrings "github.com/elk-language/go-prompt/strings"
+)
+
 // Lexer is a streaming lexer that takes in a piece of text
 // and streams tokens with the Next() method
 type Lexer interface {
@@ -11,21 +15,21 @@ type Lexer interface {
 
 // Token is a single unit of text returned by a Lexer.
 type Token interface {
-	Color() Color
-	Lexeme() string // original string that matches this token
+	Color() Color                       // Color of the token
+	LastByteIndex() istrings.ByteNumber // Index of the last byte of this token
 }
 
 // SimpleToken as the default implementation of Token.
 type SimpleToken struct {
-	color  Color
-	lexeme string
+	color         Color
+	lastByteIndex istrings.ByteNumber
 }
 
 // Create a new SimpleToken.
-func NewSimpleToken(color Color, lexeme string) *SimpleToken {
+func NewSimpleToken(color Color, index istrings.ByteNumber) *SimpleToken {
 	return &SimpleToken{
-		color:  color,
-		lexeme: lexeme,
+		color:         color,
+		lastByteIndex: index,
 	}
 }
 
@@ -35,8 +39,8 @@ func (t *SimpleToken) Color() Color {
 }
 
 // Retrieve the text that this token represents.
-func (t *SimpleToken) Lexeme() string {
-	return t.lexeme
+func (t *SimpleToken) LastByteIndex() istrings.ByteNumber {
+	return t.lastByteIndex
 }
 
 // LexerFunc is a function implementing

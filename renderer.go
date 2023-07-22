@@ -368,7 +368,6 @@ func (r *Renderer) getMultilinePrefix(prefix string) string {
 func (r *Renderer) lex(lexer Lexer, buffer *Buffer) {
 	input := buffer.Text()
 	lexer.Init(input)
-	s := input
 
 	prefix := r.prefixCallback()
 	prefixWidth := istrings.GetWidth(prefix)
@@ -378,6 +377,7 @@ func (r *Renderer) lex(lexer Lexer, buffer *Buffer) {
 	var lineCharIndex istrings.Width
 	var lineNumber int
 	endLine := buffer.startLine + int(r.row)
+	var previousByteIndex istrings.ByteNumber
 
 tokenLoop:
 	for {
@@ -386,8 +386,9 @@ tokenLoop:
 			break
 		}
 
-		text := strings.SplitAfter(s, token.Lexeme())[0]
-		s = strings.TrimPrefix(s, text)
+		currentByteIndex := token.LastByteIndex()
+		text := input[previousByteIndex+1 : currentByteIndex+1]
+		previousByteIndex = currentByteIndex
 
 		var lineBuffer strings.Builder
 
