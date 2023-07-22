@@ -3,6 +3,7 @@ package prompt
 import (
 	"testing"
 
+	istrings "github.com/elk-language/go-prompt/strings"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
@@ -16,32 +17,32 @@ func TestEagerLexerNext(t *testing.T) {
 		"return the first token when at the beginning": {
 			lexer: &EagerLexer{
 				tokens: []Token{
-					&SimpleToken{lexeme: "foo"},
-					&SimpleToken{lexeme: "bar"},
+					&SimpleToken{lastByteIndex: 0},
+					&SimpleToken{lastByteIndex: 1},
 				},
 				currentIndex: 0,
 			},
-			want: &SimpleToken{lexeme: "foo"},
+			want: &SimpleToken{lastByteIndex: 0},
 			ok:   true,
 		},
 		"return the second token": {
 			lexer: &EagerLexer{
 				tokens: []Token{
-					&SimpleToken{lexeme: "foo"},
-					&SimpleToken{lexeme: "bar"},
-					&SimpleToken{lexeme: "baz"},
+					&SimpleToken{lastByteIndex: 3},
+					&SimpleToken{lastByteIndex: 5},
+					&SimpleToken{lastByteIndex: 6},
 				},
 				currentIndex: 1,
 			},
-			want: &SimpleToken{lexeme: "bar"},
+			want: &SimpleToken{lastByteIndex: 5},
 			ok:   true,
 		},
 		"return false when at the end": {
 			lexer: &EagerLexer{
 				tokens: []Token{
-					&SimpleToken{lexeme: "foo"},
-					&SimpleToken{lexeme: "bar"},
-					&SimpleToken{lexeme: "baz"},
+					&SimpleToken{lastByteIndex: 0},
+					&SimpleToken{lastByteIndex: 4},
+					&SimpleToken{lastByteIndex: 5},
 				},
 				currentIndex: 3,
 			},
@@ -68,8 +69,8 @@ func TestEagerLexerNext(t *testing.T) {
 
 func charLex(s string) []Token {
 	var result []Token
-	for _, char := range s {
-		result = append(result, NewSimpleToken(0, string(char)))
+	for i, _ := range s {
+		result = append(result, NewSimpleToken(0, istrings.ByteNumber(i)))
 	}
 
 	return result
@@ -85,18 +86,18 @@ func TestEagerLexerInit(t *testing.T) {
 			lexer: &EagerLexer{
 				lexFunc: charLex,
 				tokens: []Token{
-					&SimpleToken{lexeme: "foo"},
-					&SimpleToken{lexeme: "bar"},
+					&SimpleToken{lastByteIndex: 2},
+					&SimpleToken{lastByteIndex: 10},
 				},
-				currentIndex: 2,
+				currentIndex: 11,
 			},
 			input: "foo",
 			want: &EagerLexer{
 				lexFunc: charLex,
 				tokens: []Token{
-					&SimpleToken{lexeme: "f"},
-					&SimpleToken{lexeme: "o"},
-					&SimpleToken{lexeme: "o"},
+					&SimpleToken{lastByteIndex: 0},
+					&SimpleToken{lastByteIndex: 1},
+					&SimpleToken{lastByteIndex: 2},
 				},
 				currentIndex: 0,
 			},
