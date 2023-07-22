@@ -73,7 +73,7 @@ func NewRenderer() *Renderer {
 func (r *Renderer) Setup() {
 	if r.title != "" {
 		r.out.SetTitle(r.title)
-		debug.AssertNoError(r.out.Flush())
+		r.flush()
 	}
 }
 
@@ -92,7 +92,7 @@ func (r *Renderer) renderPrefix(prefix string) {
 func (r *Renderer) Close() {
 	r.out.ClearTitle()
 	r.out.EraseDown()
-	debug.AssertNoError(r.out.Flush())
+	r.flush()
 }
 
 func (r *Renderer) prepareArea(lines int) {
@@ -212,7 +212,7 @@ func (r *Renderer) Render(buffer *Buffer, completion *CompletionManager, lexer L
 	if r.col == 0 {
 		return
 	}
-	defer func() { debug.AssertNoError(r.out.Flush()) }()
+	defer func() { r.flush() }()
 	r.clear(r.previousCursor)
 
 	text := buffer.Text()
@@ -310,6 +310,10 @@ func (r *Renderer) renderText(lexer Lexer, buffer *Buffer) {
 	}
 
 	r.renderLine(prefix, lineBuffer.String(), r.inputTextColor)
+}
+
+func (r *Renderer) flush() {
+	debug.AssertNoError(r.out.Flush())
 }
 
 func (r *Renderer) renderLine(prefix, line string, color Color) {
@@ -435,7 +439,7 @@ func (r *Renderer) BreakLine(buffer *Buffer, lexer Lexer) {
 
 	r.out.SetColor(DefaultColor, DefaultColor, false)
 
-	debug.AssertNoError(r.out.Flush())
+	r.flush()
 	if r.breakLineCallback != nil {
 		r.breakLineCallback(buffer.Document())
 	}

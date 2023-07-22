@@ -80,7 +80,7 @@ func WithPrefix(prefix string) Option {
 // WithInitialText can be used to set the initial buffer text.
 func WithInitialText(text string) Option {
 	return func(p *Prompt) error {
-		p.buf.InsertTextMoveCursor(text, p.renderer.col, int(p.renderer.row), true)
+		p.Buffer.InsertTextMoveCursor(text, p.renderer.col, int(p.renderer.row), true)
 		return nil
 	}
 }
@@ -315,7 +315,7 @@ func New(executor Executor, opts ...Option) *Prompt {
 	pt := &Prompt{
 		reader:                 NewStdinReader(),
 		renderer:               NewRenderer(),
-		buf:                    NewBuffer(),
+		Buffer:                 NewBuffer(),
 		executor:               executor,
 		history:                NewHistory(),
 		completion:             NewCompletionManager(6),

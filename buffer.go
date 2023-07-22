@@ -88,7 +88,9 @@ func (b *Buffer) ResetStartLine() {
 	b.startLine = 0
 }
 
-func (b *Buffer) RecalculateStartLine(columns istrings.Width, rows int) {
+// Calculates the startLine once again and returns true when it's been changed.
+func (b *Buffer) RecalculateStartLine(columns istrings.Width, rows int) bool {
+	origStartLine := b.startLine
 	pos := b.DisplayCursorPosition(columns)
 	if pos.Y > b.startLine+rows-1 {
 		b.startLine = pos.Y - rows + 1
@@ -99,6 +101,7 @@ func (b *Buffer) RecalculateStartLine(columns istrings.Width, rows int) {
 	if b.startLine < 0 {
 		b.startLine = 0
 	}
+	return origStartLine != b.startLine
 }
 
 // SetText method to set text and update cursorPosition.
@@ -123,36 +126,6 @@ func (b *Buffer) setDocument(d *Document, columns istrings.Width, rows int) {
 	b.cacheDocument = d
 	b.setCursorPosition(d.cursorPosition) // Call before setText because setText check the relation between cursorPosition and line length.
 	b.setText(d.Text, columns, rows)
-	b.RecalculateStartLine(columns, rows)
-}
-
-// CursorLeft move to left on the current line.
-func (b *Buffer) CursorLeft(count istrings.RuneNumber, columns istrings.Width, rows int) {
-	l := b.Document().GetCursorLeftPosition(count)
-	b.cursorPosition += l
-	b.RecalculateStartLine(columns, rows)
-}
-
-// CursorRight move to right on the current line.
-func (b *Buffer) CursorRight(count istrings.RuneNumber, columns istrings.Width, rows int) {
-	l := b.Document().GetCursorRightPosition(count)
-	b.cursorPosition += l
-	b.RecalculateStartLine(columns, rows)
-}
-
-// CursorUp move cursor to the previous line.
-// (for multi-line edit).
-func (b *Buffer) CursorUp(count int, columns istrings.Width, rows int) {
-	orig := b.Document().CursorPositionCol()
-	b.cursorPosition += b.Document().GetCursorUpPosition(count, orig)
-	b.RecalculateStartLine(columns, rows)
-}
-
-// CursorDown move cursor to the next line.
-// (for multi-line edit).
-func (b *Buffer) CursorDown(count int, columns istrings.Width, rows int) {
-	orig := b.Document().CursorPositionCol()
-	b.cursorPosition += b.Document().GetCursorDownPosition(count, orig)
 	b.RecalculateStartLine(columns, rows)
 }
 
