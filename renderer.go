@@ -328,6 +328,13 @@ func (r *Renderer) writeString(text string, color Color) {
 	}
 }
 
+func (r *Renderer) write(b []byte, color Color) {
+	r.out.SetColor(color, r.inputBGColor, false)
+	if _, err := r.out.Write(b); err != nil {
+		panic(err)
+	}
+}
+
 func (r *Renderer) getMultilinePrefix(prefix string) string {
 	var spaceCount int
 	var dotCount int
@@ -378,6 +385,8 @@ func (r *Renderer) lex(lexer Lexer, buffer *Buffer) {
 	var lineNumber int
 	endLine := buffer.startLine + int(r.row)
 	var previousByteIndex istrings.ByteNumber
+	lineBuffer := make([]byte, 8)
+	runeBuffer := make([]byte, utf8.UTFMax)
 
 tokenLoop:
 	for {
@@ -389,8 +398,7 @@ tokenLoop:
 		currentByteIndex := token.LastByteIndex()
 		text := input[previousByteIndex+1 : currentByteIndex+1]
 		previousByteIndex = currentByteIndex
-
-		var lineBuffer strings.Builder
+		lineBuffer = lineBuffer[:0]
 
 	charLoop:
 		for _, char := range text {
@@ -402,13 +410,14 @@ tokenLoop:
 				if lineNumber >= endLine {
 					break tokenLoop
 				}
-				lineBuffer.WriteByte('\n')
-				r.writeString(lineBuffer.String(), token.Color())
+				lineBuffer = append(lineBuffer, '\n')
+				r.write(lineBuffer, token.Color())
 				r.renderPrefix(multilinePrefix)
 				lineCharIndex = 0
-				lineBuffer.Reset()
+				lineBuffer = lineBuffer[:0]
 				if char != '\n' {
-					lineBuffer.WriteRune(char)
+					size := utf8.EncodeRune(runeBuffer, char)
+					lineBuffer = append(lineBuffer, runeBuffer[:size]...)
 					lineCharIndex += istrings.GetRuneWidth(char)
 				}
 				continue charLoop
@@ -417,10 +426,11 @@ tokenLoop:
 			if lineNumber < buffer.startLine {
 				continue charLoop
 			}
-			lineBuffer.WriteRune(char)
+			size := utf8.EncodeRune(runeBuffer, char)
+			lineBuffer = append(lineBuffer, runeBuffer[:size]...)
 			lineCharIndex += istrings.GetRuneWidth(char)
 		}
-		r.writeString(lineBuffer.String(), token.Color())
+		r.write(lineBuffer, token.Color())
 	}
 }
 
