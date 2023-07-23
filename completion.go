@@ -81,12 +81,13 @@ func (c *CompletionManager) Previous() {
 }
 
 // Next to select the next suggestion item.
-func (c *CompletionManager) Next() {
+func (c *CompletionManager) Next() int {
 	if c.verticalScroll+int(c.max)-1 == c.selected {
 		c.verticalScroll++
 	}
 	c.selected++
 	c.update()
+	return c.selected
 }
 
 // Completing returns true when the CompletionManager selects something.

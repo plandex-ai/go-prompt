@@ -10,7 +10,7 @@ import (
 
 const multilinePrefixCharacter = '.'
 
-// Renderer to render prompt information from state of Buffer.
+// Takes care of the rendering process
 type Renderer struct {
 	out               Writer
 	prefixCallback    PrefixCallback
@@ -88,7 +88,7 @@ func (r *Renderer) renderPrefix(prefix string) {
 	r.out.SetColor(DefaultColor, DefaultColor, false)
 }
 
-// Close to clear title and erasing.
+// Close to clear title and erase.
 func (r *Renderer) Close() {
 	r.out.ClearTitle()
 	r.out.EraseDown()
@@ -108,15 +108,6 @@ func (r *Renderer) prepareArea(lines int) {
 func (r *Renderer) UpdateWinSize(ws *WinSize) {
 	r.row = int(ws.Row)
 	r.col = istrings.Width(ws.Col)
-}
-
-func (r *Renderer) renderWindowTooSmall() {
-	r.out.CursorGoTo(0, 0)
-	r.out.EraseScreen()
-	r.out.SetColor(DarkRed, White, false)
-	if _, err := r.out.WriteString("Your console window is too small..."); err != nil {
-		panic(err)
-	}
 }
 
 func (r *Renderer) renderCompletion(buf *Buffer, completions *CompletionManager) {
@@ -227,7 +218,7 @@ func (r *Renderer) Render(buffer *Buffer, completion *CompletionManager, lexer L
 	r.out.HideCursor()
 	defer r.out.ShowCursor()
 
-	r.renderText(lexer, buffer)
+	r.renderText(lexer, buffer.Text(), buffer.startLine)
 
 	r.out.SetColor(DefaultColor, DefaultColor, false)
 
@@ -250,7 +241,7 @@ func (r *Renderer) Render(buffer *Buffer, completion *CompletionManager, lexer L
 
 		rest := buffer.Document().TextAfterCursor()
 
-		r.renderText(lexer, buffer)
+		r.renderText(lexer, buffer.Text(), buffer.startLine)
 
 		r.out.SetColor(DefaultColor, DefaultColor, false)
 
@@ -261,27 +252,26 @@ func (r *Renderer) Render(buffer *Buffer, completion *CompletionManager, lexer L
 	r.previousCursor = cursor
 }
 
-func (r *Renderer) renderText(lexer Lexer, buffer *Buffer) {
+func (r *Renderer) renderText(lexer Lexer, input string, startLine int) {
 	if lexer != nil {
-		r.lex(lexer, buffer)
+		r.lex(lexer, input, startLine)
 		return
 	}
 
-	text := buffer.Text()
 	prefix := r.prefixCallback()
 	prefixWidth := istrings.GetWidth(prefix)
 	col := r.col - prefixWidth
 	multilinePrefix := r.getMultilinePrefix(prefix)
 	firstIteration := true
-	endLine := buffer.startLine + int(r.row)
+	endLine := startLine + int(r.row)
 	var lineBuffer strings.Builder
 	var lineCharIndex istrings.Width
 	var lineNumber int
 
-	for _, char := range text {
+	for _, char := range input {
 		if lineCharIndex >= col || char == '\n' {
 			lineNumber++
-			if lineNumber < buffer.startLine {
+			if lineNumber < startLine {
 				continue
 			}
 			if lineNumber >= endLine {
@@ -302,7 +292,7 @@ func (r *Renderer) renderText(lexer Lexer, buffer *Buffer) {
 			continue
 		}
 
-		if lineNumber < buffer.startLine {
+		if lineNumber < startLine {
 			continue
 		}
 		lineBuffer.WriteRune(char)
@@ -372,9 +362,7 @@ func (r *Renderer) getMultilinePrefix(prefix string) string {
 
 // lex processes the given input with the given lexer
 // and writes the result
-func (r *Renderer) lex(lexer Lexer, buffer *Buffer) {
-	input := buffer.Text()
-
+func (r *Renderer) lex(lexer Lexer, input string, startLine int) {
 	prefix := r.prefixCallback()
 	prefixWidth := istrings.GetWidth(prefix)
 	col := r.col - prefixWidth
@@ -382,12 +370,12 @@ func (r *Renderer) lex(lexer Lexer, buffer *Buffer) {
 	r.renderPrefix(prefix)
 	var lineCharIndex istrings.Width
 	var lineNumber int
-	endLine := buffer.startLine + int(r.row)
+	endLine := startLine + int(r.row)
 	previousByteIndex := istrings.ByteNumber(-1)
 	lineBuffer := make([]byte, 8)
 	runeBuffer := make([]byte, utf8.UTFMax)
 
-	startIndex := indexOfFirstTokenOnLine(input, col, buffer.startLine)
+	startIndex := indexOfFirstTokenOnLine(input, col, startLine)
 	lexer.Init(input[startIndex:])
 
 tokenLoop:
@@ -406,7 +394,7 @@ tokenLoop:
 		for _, char := range text {
 			if lineCharIndex >= col || char == '\n' {
 				lineNumber++
-				if lineNumber < buffer.startLine {
+				if lineNumber < startLine {
 					continue charLoop
 				}
 				if lineNumber >= endLine {
@@ -425,7 +413,7 @@ tokenLoop:
 				continue charLoop
 			}
 
-			if lineNumber < buffer.startLine {
+			if lineNumber < startLine {
 				continue charLoop
 			}
 			size := utf8.EncodeRune(runeBuffer, char)
@@ -445,7 +433,7 @@ func (r *Renderer) BreakLine(buffer *Buffer, lexer Lexer) {
 	cursor.X += prefixWidth
 	r.clear(cursor)
 
-	r.renderText(lexer, buffer)
+	r.renderText(lexer, buffer.Text(), buffer.startLine)
 	if _, err := r.out.WriteString("\n"); err != nil {
 		panic(err)
 	}
