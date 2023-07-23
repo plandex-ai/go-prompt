@@ -2,6 +2,8 @@ package prompt
 
 import (
 	"bytes"
+	"fmt"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -35,7 +37,10 @@ type ExecuteOnEnterCallback func(input string, indentSize int) (indent int, exec
 
 // Completer is a function that returns
 // a slice of suggestions for the given Document.
-type Completer func(Document) []Suggest
+//
+// startChar and endChar represent the indices of the first and last rune of the text
+// that the suggestions were generated for and that should be replaced by the selected suggestion.
+type Completer func(Document) (suggestions []Suggest, startChar, endChar istrings.RuneNumber)
 
 // Prompt is a core struct of go-prompt.
 type Prompt struct {
@@ -115,7 +120,9 @@ func (p *Prompt) Run() {
 				go p.readBuffer(bufCh, stopReadBufCh)
 				go p.handleSignals(exitCh, winSizeCh, stopHandleSignalCh)
 			} else if rerender {
-				p.completion.Update(*p.Buffer.Document())
+				if p.completion.shouldUpdate {
+					p.completion.Update(*p.Buffer.Document())
+				}
 				p.renderer.Render(p.Buffer, p.completion, p.lexer)
 			}
 		case w := <-winSizeCh:
@@ -133,14 +140,14 @@ func (p *Prompt) Run() {
 	}
 }
 
-// func Log(format string, a ...any) {
-// 	f, err := os.OpenFile("log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-// 	if err != nil {
-// 		log.Fatalf("error opening file: %v", err)
-// 	}
-// 	defer f.Close()
-// 	fmt.Fprintf(f, format+"\n", a...)
-// }
+func Log(format string, a ...any) {
+	f, err := os.OpenFile("log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	defer f.Close()
+	fmt.Fprintf(f, format+"\n", a...)
+}
 
 func (p *Prompt) feed(b []byte) (shouldExit bool, rerender bool, userInput *UserInput) {
 	key := GetKey(b)
@@ -232,8 +239,9 @@ func (p *Prompt) feed(b []byte) (shouldExit bool, rerender bool, userInput *User
 }
 
 func (p *Prompt) handleCompletionKeyBinding(b []byte, key Key, completing bool) {
+	p.completion.shouldUpdate = true
 	cols := p.renderer.UserInputColumns()
-	rows := int(p.renderer.row)
+	rows := p.renderer.row
 	completionLen := len(p.completion.tmp)
 	p.completionReset = false
 
@@ -241,18 +249,27 @@ keySwitch:
 	switch key {
 	case Down:
 		if completing || p.completionOnDown {
-			p.completion.Next()
+			p.updateSuggestions(func() {
+				p.completion.Next()
+			})
 		}
 	case ControlI:
-		p.completion.Next()
+		p.updateSuggestions(func() {
+			p.completion.Next()
+		})
 	case Up:
 		if completing {
-			p.completion.Previous()
+			p.updateSuggestions(func() {
+				p.completion.Previous()
+			})
 		}
 	case Tab:
 		if completionLen > 0 {
 			// If there are any suggestions, select the next one
-			p.completion.Next()
+			p.updateSuggestions(func() {
+				p.completion.Next()
+			})
+
 			break
 		}
 
@@ -272,7 +289,9 @@ keySwitch:
 	case BackTab:
 		if completionLen > 0 {
 			// If there are any suggestions, select the previous one
-			p.completion.Previous()
+			p.updateSuggestions(func() {
+				p.completion.Previous()
+			})
 			break
 		}
 
@@ -296,6 +315,50 @@ keySwitch:
 		}
 		p.completion.Reset()
 	}
+}
+
+func (p *Prompt) updateSuggestions(fn func()) {
+	cols := p.renderer.UserInputColumns()
+	rows := p.renderer.row
+
+	prevStart := p.completion.startCharIndex
+	prevEnd := p.completion.endCharIndex
+	prevSuggestion, prevSelected := p.completion.GetSelectedSuggestion()
+
+	fn()
+
+	p.completion.shouldUpdate = false
+	newSuggestion, newSelected := p.completion.GetSelectedSuggestion()
+
+	// do nothing
+	if !prevSelected && !newSelected {
+		return
+	}
+
+	// insert the new selection
+	if !prevSelected {
+		p.Buffer.DeleteBeforeCursor(p.completion.endCharIndex-p.completion.startCharIndex, cols, rows)
+		p.Buffer.InsertTextMoveCursor(newSuggestion.Text, cols, rows, false)
+		return
+	}
+	// delete the previous selection
+	if !newSelected {
+		p.Buffer.DeleteBeforeCursor(
+			istrings.RuneCount(prevSuggestion.Text)-(prevEnd-prevStart),
+			cols,
+			rows,
+		)
+		return
+	}
+
+	// delete previous selection and render the new one
+	p.Buffer.DeleteBeforeCursor(
+		istrings.RuneCount(prevSuggestion.Text),
+		cols,
+		rows,
+	)
+
+	p.Buffer.InsertTextMoveCursor(newSuggestion.Text, cols, rows, false)
 }
 
 func (p *Prompt) handleKeyBinding(key Key, cols istrings.Width, rows int) (shouldExit bool, rerender bool) {

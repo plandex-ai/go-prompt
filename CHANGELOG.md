@@ -55,7 +55,6 @@ This release aims to make the code a bit cleaner, fix a couple of bugs and provi
 - Rename `prompt.OptionPrefixBackgroundColor` to `prompt.WithPrefixBackgroundColor`
 - Rename `prompt.OptionInputTextColor` to `prompt.WithInputTextColor`
 - Rename `prompt.OptionInputBGColor` to `prompt.WithInputBGColor`
-- Rename `prompt.OptionPreviewSuggestionTextColor` to `prompt.WithPreviewSuggestionTextColor`
 - Rename `prompt.OptionSuggestionTextColor` to `prompt.WithSuggestionTextColor`
 - Rename `prompt.OptionSuggestionBGColor` to `prompt.WithSuggestionBGColor`
 - Rename `prompt.OptionSelectedSuggestionTextColor` to `prompt.WithSelectedSuggestionTextColor`
@@ -86,7 +85,8 @@ This release aims to make the code a bit cleaner, fix a couple of bugs and provi
 ### Removed
 
 - `prompt.SwitchKeyBindMode`
-
+- `prompt.OptionPreviewSuggestionTextColor`
+- `prompt.OptionPreviewSuggestionBGColor`
 
 ## [0.2.6] - 2021-03-03
 

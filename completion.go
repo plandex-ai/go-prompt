@@ -16,12 +16,6 @@ const (
 	rightSuffix   = " "
 )
 
-var (
-	leftMargin       = istrings.GetWidth(leftPrefix + leftSuffix)
-	rightMargin      = istrings.GetWidth(rightPrefix + rightSuffix)
-	completionMargin = leftMargin + rightMargin
-)
-
 // Suggest represents a single suggestion
 // in the auto-complete box.
 type Suggest struct {
@@ -31,10 +25,13 @@ type Suggest struct {
 
 // CompletionManager manages which suggestion is now selected.
 type CompletionManager struct {
-	selected  int // -1 means nothing is selected.
-	tmp       []Suggest
-	max       uint16
-	completer Completer
+	selected       int // -1 means nothing is selected.
+	tmp            []Suggest
+	max            uint16
+	completer      Completer
+	startCharIndex istrings.RuneNumber // index of the first char of the text that should be replaced by the selected suggestion
+	endCharIndex   istrings.RuneNumber // index of the last char of the text that should be replaced by the selected suggestion
+	shouldUpdate   bool
 
 	verticalScroll int
 	wordSeparator  string
@@ -68,7 +65,7 @@ func (c *CompletionManager) Reset() {
 
 // Update the suggestions.
 func (c *CompletionManager) Update(in Document) {
-	c.tmp = c.completer(in)
+	c.tmp, c.startCharIndex, c.endCharIndex = c.completer(in)
 }
 
 // Select the previous suggestion item.
@@ -212,6 +209,6 @@ var _ Completer = NoopCompleter
 
 // NoopCompleter implements a Completer function
 // that always returns no suggestions.
-func NoopCompleter(_ Document) []Suggest {
-	return nil
+func NoopCompleter(_ Document) ([]Suggest, istrings.RuneNumber, istrings.RuneNumber) {
+	return nil, 0, 0
 }

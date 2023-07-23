@@ -208,7 +208,8 @@ func TestFormatText(t *testing.T) {
 }
 
 func TestNoopCompleter(t *testing.T) {
-	if NoopCompleter(Document{}) != nil {
+	sug, start, end := NoopCompleter(Document{})
+	if sug != nil || start != 0 || end != 0 {
 		t.Errorf("NoopCompleter should return nil")
 	}
 }

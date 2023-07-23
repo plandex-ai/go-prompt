@@ -133,22 +133,6 @@ func WithInputBGColor(x Color) Option {
 	}
 }
 
-// WithPreviewSuggestionTextColor to change a text color which is completed
-func WithPreviewSuggestionTextColor(x Color) Option {
-	return func(p *Prompt) error {
-		p.renderer.previewSuggestionTextColor = x
-		return nil
-	}
-}
-
-// WithPreviewSuggestionBGColor to change a background color which is completed
-func WithPreviewSuggestionBGColor(x Color) Option {
-	return func(p *Prompt) error {
-		p.renderer.previewSuggestionBGColor = x
-		return nil
-	}
-}
-
 // WithSuggestionTextColor to change a text color in drop down suggestions.
 func WithSuggestionTextColor(x Color) Option {
 	return func(p *Prompt) error {

@@ -56,6 +56,11 @@ func (d *Document) GetCharRelativeToCursor(offset istrings.RuneNumber) (r rune) 
 	return 0
 }
 
+// Returns the index of the rune that's under the cursor.
+func (d *Document) CurrentRuneIndex() istrings.RuneNumber {
+	return d.cursorPosition
+}
+
 // TextBeforeCursor returns the text before the cursor.
 func (d *Document) TextBeforeCursor() string {
 	r := []rune(d.Text)

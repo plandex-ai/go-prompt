@@ -27,8 +27,6 @@ type Renderer struct {
 	prefixBGColor                Color
 	inputTextColor               Color
 	inputBGColor                 Color
-	previewSuggestionTextColor   Color
-	previewSuggestionBGColor     Color
 	suggestionTextColor          Color
 	suggestionBGColor            Color
 	selectedSuggestionTextColor  Color
@@ -54,8 +52,6 @@ func NewRenderer() *Renderer {
 		prefixBGColor:                DefaultColor,
 		inputTextColor:               DefaultColor,
 		inputBGColor:                 DefaultColor,
-		previewSuggestionTextColor:   Green,
-		previewSuggestionBGColor:     DefaultColor,
 		suggestionTextColor:          White,
 		suggestionBGColor:            Cyan,
 		selectedSuggestionTextColor:  Black,
@@ -228,27 +224,6 @@ func (r *Renderer) Render(buffer *Buffer, completion *CompletionManager, lexer L
 	cursor = r.move(cursor, targetCursor)
 
 	r.renderCompletion(buffer, completion)
-	if suggest, ok := completion.GetSelectedSuggestion(); ok {
-		cursor = r.backward(cursor, istrings.GetWidth(buffer.Document().GetWordBeforeCursorUntilSeparator(completion.wordSeparator)))
-
-		r.out.SetColor(r.previewSuggestionTextColor, r.previewSuggestionBGColor, false)
-		if _, err := r.out.WriteString(suggest.Text); err != nil {
-			panic(err)
-		}
-		r.out.SetColor(DefaultColor, DefaultColor, false)
-		cursor.X += istrings.GetWidth(suggest.Text)
-		endOfSuggestionPos := cursor
-
-		rest := buffer.Document().TextAfterCursor()
-
-		r.renderText(lexer, buffer.Text(), buffer.startLine)
-
-		r.out.SetColor(DefaultColor, DefaultColor, false)
-
-		cursor = cursor.Join(positionAtEndOfString(rest, col))
-
-		cursor = r.move(cursor, endOfSuggestionPos)
-	}
 	r.previousCursor = cursor
 }
 
