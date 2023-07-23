@@ -127,7 +127,8 @@ func (r *Renderer) renderCompletion(buf *Buffer, completions *CompletionManager)
 	formatted = formatted[completions.verticalScroll : completions.verticalScroll+windowHeight]
 	r.prepareArea(windowHeight)
 
-	cursor := positionAtEndOfString(prefix+buf.Document().TextBeforeCursor(), r.col-prefixWidth)
+	cursor := positionAtEndOfString(buf.Document().TextBeforeCursor(), r.col-prefixWidth)
+	cursor.X += prefixWidth
 	x := cursor.X
 	if x+width >= r.col {
 		cursor = r.backward(cursor, x+width-r.col)
