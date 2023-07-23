@@ -237,6 +237,9 @@ func (r *Renderer) renderText(lexer Lexer, input string, startLine int) {
 	prefixWidth := istrings.GetWidth(prefix)
 	col := r.col - prefixWidth
 	multilinePrefix := r.getMultilinePrefix(prefix)
+	if startLine != 0 {
+		prefix = multilinePrefix
+	}
 	firstIteration := true
 	endLine := startLine + int(r.row)
 	var lineBuffer strings.Builder
@@ -246,7 +249,7 @@ func (r *Renderer) renderText(lexer Lexer, input string, startLine int) {
 	for _, char := range input {
 		if lineCharIndex >= col || char == '\n' {
 			lineNumber++
-			if lineNumber < startLine {
+			if lineNumber-1 < startLine {
 				continue
 			}
 			if lineNumber >= endLine {
@@ -283,17 +286,17 @@ func (r *Renderer) flush() {
 
 func (r *Renderer) renderLine(prefix, line string, color Color) {
 	r.renderPrefix(prefix)
-	r.writeString(line, color)
+	r.writeStringColor(line, color)
 }
 
-func (r *Renderer) writeString(text string, color Color) {
+func (r *Renderer) writeStringColor(text string, color Color) {
 	r.out.SetColor(color, r.inputBGColor, false)
 	if _, err := r.out.WriteString(text); err != nil {
 		panic(err)
 	}
 }
 
-func (r *Renderer) write(b []byte, color Color) {
+func (r *Renderer) writeColor(b []byte, color Color) {
 	r.out.SetColor(color, r.inputBGColor, false)
 	if _, err := r.out.Write(b); err != nil {
 		panic(err)
@@ -342,7 +345,6 @@ func (r *Renderer) lex(lexer Lexer, input string, startLine int) {
 	prefixWidth := istrings.GetWidth(prefix)
 	col := r.col - prefixWidth
 	multilinePrefix := r.getMultilinePrefix(prefix)
-	r.renderPrefix(prefix)
 	var lineCharIndex istrings.Width
 	var lineNumber int
 	endLine := startLine + int(r.row)
@@ -350,17 +352,21 @@ func (r *Renderer) lex(lexer Lexer, input string, startLine int) {
 	lineBuffer := make([]byte, 8)
 	runeBuffer := make([]byte, utf8.UTFMax)
 
-	startIndex := indexOfFirstTokenOnLine(input, col, startLine)
-	lexer.Init(input[startIndex:])
+	lexer.Init(input)
+
+	if startLine != 0 {
+		prefix = multilinePrefix
+	}
+	r.renderPrefix(prefix)
 
 tokenLoop:
 	for {
 		token, ok := lexer.Next()
 		if !ok {
-			break
+			break tokenLoop
 		}
 
-		currentByteIndex := startIndex + token.LastByteIndex()
+		currentByteIndex := token.LastByteIndex()
 		text := input[previousByteIndex+1 : currentByteIndex+1]
 		previousByteIndex = currentByteIndex
 		lineBuffer = lineBuffer[:0]
@@ -369,14 +375,14 @@ tokenLoop:
 		for _, char := range text {
 			if lineCharIndex >= col || char == '\n' {
 				lineNumber++
-				if lineNumber < startLine {
+				if lineNumber-1 < startLine {
 					continue charLoop
 				}
 				if lineNumber >= endLine {
 					break tokenLoop
 				}
 				lineBuffer = append(lineBuffer, '\n')
-				r.write(lineBuffer, token.Color())
+				r.writeColor(lineBuffer, token.Color())
 				r.renderPrefix(multilinePrefix)
 				lineCharIndex = 0
 				lineBuffer = lineBuffer[:0]
@@ -395,7 +401,9 @@ tokenLoop:
 			lineBuffer = append(lineBuffer, runeBuffer[:size]...)
 			lineCharIndex += istrings.GetRuneWidth(char)
 		}
-		r.write(lineBuffer, token.Color())
+		if len(lineBuffer) > 0 {
+			r.writeColor(lineBuffer, token.Color())
+		}
 	}
 }
 
