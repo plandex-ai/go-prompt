@@ -7,30 +7,31 @@ import (
 )
 
 func TestEmacsKeyBindings(t *testing.T) {
-	buf := NewBuffer()
-	buf.InsertText("abcde", false, true)
+	p := New(NoopExecutor)
+	buf := p.Buffer
+	buf.InsertTextMoveCursor("abcde", DefColCount, DefRowCount, false)
 	if buf.cursorPosition != istrings.RuneNumber(len("abcde")) {
 		t.Errorf("Want %d, but got %d", len("abcde"), buf.cursorPosition)
 	}
 
 	// Go to the beginning of the line
-	applyEmacsKeyBind(buf, ControlA)
+	applyEmacsKeyBind(p, ControlA)
 	if buf.cursorPosition != 0 {
 		t.Errorf("Want %d, but got %d", 0, buf.cursorPosition)
 	}
 
 	// Go to the end of the line
-	applyEmacsKeyBind(buf, ControlE)
+	applyEmacsKeyBind(p, ControlE)
 	if buf.cursorPosition != istrings.RuneNumber(len("abcde")) {
 		t.Errorf("Want %d, but got %d", len("abcde"), buf.cursorPosition)
 	}
 }
 
-func applyEmacsKeyBind(buf *Buffer, key Key) {
+func applyEmacsKeyBind(p *Prompt, key Key) {
 	for i := range emacsKeyBindings {
 		kb := emacsKeyBindings[i]
 		if kb.Key == key {
-			kb.Fn(buf)
+			kb.Fn(p)
 		}
 	}
 }

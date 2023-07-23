@@ -1,7 +1,7 @@
 package prompt
 
 // KeyBindFunc receives buffer and processed it.
-type KeyBindFunc func(*Buffer)
+type KeyBindFunc func(p *Prompt) (rerender bool)
 
 // KeyBind represents which key should do what operation.
 type KeyBind struct {

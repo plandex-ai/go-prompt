@@ -55,7 +55,6 @@ This release aims to make the code a bit cleaner, fix a couple of bugs and provi
 - Rename `prompt.OptionPrefixBackgroundColor` to `prompt.WithPrefixBackgroundColor`
 - Rename `prompt.OptionInputTextColor` to `prompt.WithInputTextColor`
 - Rename `prompt.OptionInputBGColor` to `prompt.WithInputBGColor`
-- Rename `prompt.OptionPreviewSuggestionTextColor` to `prompt.WithPreviewSuggestionTextColor`
 - Rename `prompt.OptionSuggestionTextColor` to `prompt.WithSuggestionTextColor`
 - Rename `prompt.OptionSuggestionBGColor` to `prompt.WithSuggestionBGColor`
 - Rename `prompt.OptionSelectedSuggestionTextColor` to `prompt.WithSelectedSuggestionTextColor`
@@ -75,6 +74,8 @@ This release aims to make the code a bit cleaner, fix a couple of bugs and provi
 - Rename `prompt.OptionShowCompletionAtStart` to `prompt.WithShowCompletionAtStart`
 - Rename `prompt.OptionBreakLineCallback` to `prompt.WithBreakLineCallback`
 - Rename `prompt.OptionExitChecker` to `prompt.WithExitChecker`
+- Change the signature of `Completer` from `func(Document) []Suggest` to `func(Document) (suggestions []Suggest, startChar, endChar istrings.RuneNumber)`
+- Change the signature of `KeyBindFunc` from `func(*Buffer)` to `func(p *Prompt) (rerender bool)`
 
 ### Fixed
 
@@ -86,7 +87,8 @@ This release aims to make the code a bit cleaner, fix a couple of bugs and provi
 ### Removed
 
 - `prompt.SwitchKeyBindMode`
-
+- `prompt.OptionPreviewSuggestionTextColor`
+- `prompt.OptionPreviewSuggestionBGColor`
 
 ## [0.2.6] - 2021-03-03
 

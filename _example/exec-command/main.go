@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 
@@ -9,6 +10,7 @@ import (
 
 func executor(t string) {
 	if t != "bash" {
+		fmt.Println("Sorry, I don't understand.")
 		return
 	}
 
@@ -19,16 +21,9 @@ func executor(t string) {
 	cmd.Run()
 }
 
-func completer(t prompt.Document) []prompt.Suggest {
-	return []prompt.Suggest{
-		{Text: "bash"},
-	}
-}
-
 func main() {
 	p := prompt.New(
 		executor,
-		prompt.WithCompleter(completer),
 	)
 	p.Run()
 }

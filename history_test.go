@@ -38,10 +38,10 @@ func TestHistoryOlder(t *testing.T) {
 
 	// Prepare buffer
 	buf := NewBuffer()
-	buf.InsertText("echo 2", false, true)
+	buf.InsertTextMoveCursor("echo 2", DefColCount, DefRowCount, false)
 
 	// [1 time] Call Older function
-	buf1, changed := h.Older(buf)
+	buf1, changed := h.Older(buf, DefColCount, DefRowCount)
 	if !changed {
 		t.Error("Should be changed history but not changed.")
 	}
@@ -51,8 +51,8 @@ func TestHistoryOlder(t *testing.T) {
 
 	// [2 times] Call Older function
 	buf = NewBuffer()
-	buf.InsertText("echo 1", false, true)
-	buf2, changed := h.Older(buf)
+	buf.InsertTextMoveCursor("echo 1", DefColCount, DefRowCount, false)
+	buf2, changed := h.Older(buf, DefColCount, DefRowCount)
 	if changed {
 		t.Error("Should be not changed history but changed.")
 	}

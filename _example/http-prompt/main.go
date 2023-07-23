@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	prompt "github.com/elk-language/go-prompt"
+	istrings "github.com/elk-language/go-prompt/strings"
 )
 
 type RequestContext struct {
@@ -157,12 +158,14 @@ func executor(in string) {
 	}
 }
 
-func completer(in prompt.Document) []prompt.Suggest {
+func completer(in prompt.Document) ([]prompt.Suggest, istrings.RuneNumber, istrings.RuneNumber) {
+	endIndex := in.CurrentRuneIndex()
 	w := in.GetWordBeforeCursor()
 	if w == "" {
-		return []prompt.Suggest{}
+		return []prompt.Suggest{}, 0, 0
 	}
-	return prompt.FilterHasPrefix(suggestions, w, true)
+	startIndex := endIndex - istrings.RuneCount(w)
+	return prompt.FilterHasPrefix(suggestions, w, true), startIndex, endIndex
 }
 
 func main() {

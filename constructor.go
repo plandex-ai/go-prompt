@@ -80,7 +80,7 @@ func WithPrefix(prefix string) Option {
 // WithInitialText can be used to set the initial buffer text.
 func WithInitialText(text string) Option {
 	return func(p *Prompt) error {
-		p.buf.InsertText(text, false, true)
+		p.Buffer.InsertTextMoveCursor(text, p.renderer.col, int(p.renderer.row), true)
 		return nil
 	}
 }
@@ -129,22 +129,6 @@ func WithInputTextColor(x Color) Option {
 func WithInputBGColor(x Color) Option {
 	return func(p *Prompt) error {
 		p.renderer.inputBGColor = x
-		return nil
-	}
-}
-
-// WithPreviewSuggestionTextColor to change a text color which is completed
-func WithPreviewSuggestionTextColor(x Color) Option {
-	return func(p *Prompt) error {
-		p.renderer.previewSuggestionTextColor = x
-		return nil
-	}
-}
-
-// WithPreviewSuggestionBGColor to change a background color which is completed
-func WithPreviewSuggestionBGColor(x Color) Option {
-	return func(p *Prompt) error {
-		p.renderer.previewSuggestionBGColor = x
 		return nil
 	}
 }
@@ -315,7 +299,7 @@ func New(executor Executor, opts ...Option) *Prompt {
 	pt := &Prompt{
 		reader:                 NewStdinReader(),
 		renderer:               NewRenderer(),
-		buf:                    NewBuffer(),
+		Buffer:                 NewBuffer(),
 		executor:               executor,
 		history:                NewHistory(),
 		completion:             NewCompletionManager(6),

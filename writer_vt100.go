@@ -224,19 +224,20 @@ func (w *VT100Writer) SetColor(fg, bg Color, bold bool) {
 	}
 }
 
+const formatSeparator = ';'
+
 // SetDisplayAttributes to set VT100 display attributes.
 func (w *VT100Writer) SetDisplayAttributes(fg, bg Color, attrs ...DisplayAttribute) {
 	w.WriteRaw([]byte{0x1b, '['}) // control sequence introducer
 	defer w.WriteRaw([]byte{'m'}) // final character
 
-	var separator byte = ';'
 	for i := range attrs {
 		p, ok := displayAttributeParameters[attrs[i]]
 		if !ok {
 			continue
 		}
 		w.WriteRaw(p)
-		w.WriteRaw([]byte{separator})
+		w.WriteRaw([]byte{formatSeparator})
 	}
 
 	f, ok := foregroundANSIColors[fg]
@@ -244,7 +245,7 @@ func (w *VT100Writer) SetDisplayAttributes(fg, bg Color, attrs ...DisplayAttribu
 		f = foregroundANSIColors[DefaultColor]
 	}
 	w.WriteRaw(f)
-	w.WriteRaw([]byte{separator})
+	w.WriteRaw([]byte{formatSeparator})
 	b, ok := backgroundANSIColors[bg]
 	if !ok {
 		b = backgroundANSIColors[DefaultColor]

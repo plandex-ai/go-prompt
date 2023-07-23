@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"strings"
+	"unicode/utf8"
 
 	"github.com/elk-language/go-prompt"
+	"github.com/elk-language/go-prompt/strings"
 )
 
 func main() {
@@ -19,9 +20,7 @@ func main() {
 func lexer(line string) []prompt.Token {
 	var elements []prompt.Token
 
-	strArr := strings.Split(line, "")
-
-	for i, value := range strArr {
+	for i, value := range line {
 		var color prompt.Color
 		// every even char must be green.
 		if i%2 == 0 {
@@ -29,7 +28,8 @@ func lexer(line string) []prompt.Token {
 		} else {
 			color = prompt.White
 		}
-		element := prompt.NewSimpleToken(color, value)
+		lastByteIndex := strings.ByteNumber(i + utf8.RuneLen(value) - 1)
+		element := prompt.NewSimpleToken(color, lastByteIndex)
 
 		elements = append(elements, element)
 	}

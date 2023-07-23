@@ -45,95 +45,127 @@ var emacsKeyBindings = []KeyBind{
 	// Go to the End of the line
 	{
 		Key: ControlE,
-		Fn: func(buf *Buffer) {
-			buf.CursorRight(istrings.RuneCount(buf.Document().CurrentLineAfterCursor()))
+		Fn: func(p *Prompt) bool {
+			return p.CursorRight(
+				istrings.RuneCount(p.Buffer.Document().CurrentLineAfterCursor()),
+			)
 		},
 	},
 	// Go to the beginning of the line
 	{
 		Key: ControlA,
-		Fn: func(buf *Buffer) {
-			buf.CursorLeft(buf.Document().FindStartOfFirstWordOfLine())
+		Fn: func(p *Prompt) bool {
+			return p.CursorLeft(
+				p.Buffer.Document().FindStartOfFirstWordOfLine(),
+			)
 		},
 	},
 	// Cut the Line after the cursor
 	{
 		Key: ControlK,
-		Fn: func(buf *Buffer) {
-			buf.Delete(istrings.RuneCount(buf.Document().CurrentLineAfterCursor()))
+		Fn: func(p *Prompt) bool {
+			p.Buffer.Delete(
+				istrings.RuneCount(p.Buffer.Document().CurrentLineAfterCursor()),
+				p.renderer.col,
+				p.renderer.row,
+			)
+			return true
 		},
 	},
 	// Cut/delete the Line before the cursor
 	{
 		Key: ControlU,
-		Fn: func(buf *Buffer) {
-			buf.DeleteBeforeCursor(istrings.RuneCount(buf.Document().CurrentLineBeforeCursor()))
+		Fn: func(p *Prompt) bool {
+			p.Buffer.DeleteBeforeCursor(
+				istrings.RuneCount(p.Buffer.Document().CurrentLineBeforeCursor()),
+				p.renderer.col,
+				p.renderer.row,
+			)
+			return true
 		},
 	},
 	// Delete character under the cursor
 	{
 		Key: ControlD,
-		Fn: func(buf *Buffer) {
-			if buf.Text() != "" {
-				buf.Delete(1)
+		Fn: func(p *Prompt) bool {
+			if p.Buffer.Text() != "" {
+				p.Buffer.Delete(1, p.renderer.col, p.renderer.row)
+				return true
 			}
+			return false
 		},
 	},
 	// Backspace
 	{
 		Key: ControlH,
-		Fn: func(buf *Buffer) {
-			buf.DeleteBeforeCursor(1)
+		Fn: func(p *Prompt) bool {
+			p.Buffer.DeleteBeforeCursor(1, p.renderer.col, p.renderer.row)
+			return true
 		},
 	},
 	// Right allow: Forward one character
 	{
 		Key: ControlF,
-		Fn: func(buf *Buffer) {
-			buf.CursorRight(1)
+		Fn: func(p *Prompt) bool {
+			return p.CursorRight(1)
 		},
 	},
 	// Alt Right allow: Forward one word
 	{
 		Key: AltRight,
-		Fn: func(buf *Buffer) {
-			buf.CursorRight(buf.Document().FindRuneNumberUntilEndOfCurrentWord())
+		Fn: func(p *Prompt) bool {
+			return p.CursorRight(
+				p.Buffer.Document().FindRuneNumberUntilEndOfCurrentWord(),
+			)
 		},
 	},
 	// Left allow: Backward one character
 	{
 		Key: ControlB,
-		Fn: func(buf *Buffer) {
-			buf.CursorLeft(1)
+		Fn: func(p *Prompt) bool {
+			return p.CursorLeft(1)
 		},
 	},
 	// Alt Left allow: Backward one word
 	{
 		Key: AltLeft,
-		Fn: func(buf *Buffer) {
-			buf.CursorLeft(buf.Document().FindRuneNumberUntilStartOfPreviousWord())
+		Fn: func(p *Prompt) bool {
+			return p.CursorLeft(
+				p.Buffer.Document().FindRuneNumberUntilStartOfPreviousWord(),
+			)
 		},
 	},
 	// Cut the Word before the cursor.
 	{
 		Key: ControlW,
-		Fn: func(buf *Buffer) {
-			buf.DeleteBeforeCursor(istrings.RuneCount(buf.Document().GetWordBeforeCursorWithSpace()))
+		Fn: func(p *Prompt) bool {
+			p.Buffer.DeleteBeforeCursor(
+				istrings.RuneCount(p.Buffer.Document().GetWordBeforeCursorWithSpace()),
+				p.renderer.col,
+				p.renderer.row,
+			)
+			return true
 		},
 	},
 	{
 		Key: AltBackspace,
-		Fn: func(buf *Buffer) {
-			buf.DeleteBeforeCursor(istrings.RuneCount(buf.Document().GetWordBeforeCursorWithSpace()))
+		Fn: func(p *Prompt) bool {
+			p.Buffer.DeleteBeforeCursor(
+				istrings.RuneCount(p.Buffer.Document().GetWordBeforeCursorWithSpace()),
+				p.renderer.col,
+				p.renderer.row,
+			)
+			return true
 		},
 	},
 	// Clear the Screen, similar to the clear command
 	{
 		Key: ControlL,
-		Fn: func(buf *Buffer) {
+		Fn: func(p *Prompt) bool {
 			consoleWriter.EraseScreen()
 			consoleWriter.CursorGoTo(0, 0)
 			debug.AssertNoError(consoleWriter.Flush())
+			return true
 		},
 	},
 }

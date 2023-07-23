@@ -5,33 +5,35 @@ import (
 )
 
 // GoLineEnd Go to the End of the line
-func GoLineEnd(buf *Buffer) {
-	x := []rune(buf.Document().TextAfterCursor())
-	buf.CursorRight(istrings.RuneNumber(len(x)))
+func GoLineEnd(p *Prompt) bool {
+	x := []rune(p.Buffer.Document().TextAfterCursor())
+	return p.CursorRight(istrings.RuneNumber(len(x)))
 }
 
 // GoLineBeginning Go to the beginning of the line
-func GoLineBeginning(buf *Buffer) {
-	x := []rune(buf.Document().TextBeforeCursor())
-	buf.CursorLeft(istrings.RuneNumber(len(x)))
+func GoLineBeginning(p *Prompt) bool {
+	x := []rune(p.Buffer.Document().TextBeforeCursor())
+	return p.CursorLeft(istrings.RuneNumber(len(x)))
 }
 
 // DeleteChar Delete character under the cursor
-func DeleteChar(buf *Buffer) {
-	buf.Delete(1)
+func DeleteChar(p *Prompt) bool {
+	p.Buffer.Delete(1, p.renderer.col, p.renderer.row)
+	return true
 }
 
 // DeleteBeforeChar Go to Backspace
-func DeleteBeforeChar(buf *Buffer) {
-	buf.DeleteBeforeCursor(1)
+func DeleteBeforeChar(p *Prompt) bool {
+	p.Buffer.DeleteBeforeCursor(1, p.renderer.col, p.renderer.row)
+	return true
 }
 
 // GoRightChar Forward one character
-func GoRightChar(buf *Buffer) {
-	buf.CursorRight(1)
+func GoRightChar(p *Prompt) bool {
+	return p.CursorRight(1)
 }
 
 // GoLeftChar Backward one character
-func GoLeftChar(buf *Buffer) {
-	buf.CursorLeft(1)
+func GoLeftChar(p *Prompt) bool {
+	return p.CursorLeft(1)
 }
