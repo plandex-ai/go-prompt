@@ -374,7 +374,6 @@ func (r *Renderer) getMultilinePrefix(prefix string) string {
 // and writes the result
 func (r *Renderer) lex(lexer Lexer, buffer *Buffer) {
 	input := buffer.Text()
-	lexer.Init(input)
 
 	prefix := r.prefixCallback()
 	prefixWidth := istrings.GetWidth(prefix)
@@ -384,9 +383,12 @@ func (r *Renderer) lex(lexer Lexer, buffer *Buffer) {
 	var lineCharIndex istrings.Width
 	var lineNumber int
 	endLine := buffer.startLine + int(r.row)
-	var previousByteIndex istrings.ByteNumber
+	previousByteIndex := istrings.ByteNumber(-1)
 	lineBuffer := make([]byte, 8)
 	runeBuffer := make([]byte, utf8.UTFMax)
+
+	startIndex := indexOfFirstTokenOnLine(input, col, buffer.startLine)
+	lexer.Init(input[startIndex:])
 
 tokenLoop:
 	for {
@@ -395,7 +397,7 @@ tokenLoop:
 			break
 		}
 
-		currentByteIndex := token.LastByteIndex()
+		currentByteIndex := startIndex + token.LastByteIndex()
 		text := input[previousByteIndex+1 : currentByteIndex+1]
 		previousByteIndex = currentByteIndex
 		lineBuffer = lineBuffer[:0]

@@ -129,6 +129,89 @@ baz`,
 	}
 }
 
+func TestIndexOfFirstTokenOnLine(t *testing.T) {
+	tests := map[string]struct {
+		input string
+		cols  istrings.Width
+		line  int
+		want  istrings.ByteNumber
+	}{
+		"line is zero": {
+			input: `   hi
+foobar
+baz`,
+			cols: 20,
+			line: 0,
+			want: 0,
+		},
+		"input is empty": {
+			input: "",
+			cols:  3,
+			line:  10,
+			want:  0,
+		},
+		"word spans two lines": {
+			input: `hi
+foobar
+baz`,
+			cols: 3,
+			line: 2,
+			want: 3,
+		},
+		"word spans two lines and line has two words": {
+			input: `hi
+baz foobar
+baz`,
+			cols: 6,
+			line: 2,
+			want: 7,
+		},
+		"word spans one line": {
+			input: `hi
+foo
+bar
+baz`,
+			cols: 3,
+			line: 2,
+			want: 7,
+		},
+		"word is indented and spans two lines": {
+			input: `hi
+foo
+ barbaz
+foo`,
+			cols: 5,
+			line: 3,
+			want: 8,
+		},
+		"word is indented": {
+			input: `hi
+foo
+ barbaz
+foo`,
+			cols: 8,
+			line: 2,
+			want: 7,
+		},
+		"input has fewer lines": {
+			input: `hi
+foo`,
+			cols: 3,
+			line: 10,
+			want: 3,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := indexOfFirstTokenOnLine(tc.input, tc.cols, tc.line)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatalf(diff)
+			}
+		})
+	}
+}
+
 func TestPositionAdd(t *testing.T) {
 	tests := map[string]struct {
 		left  Position

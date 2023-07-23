@@ -3,6 +3,8 @@ package prompt
 import (
 	"io"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	istrings "github.com/elk-language/go-prompt/strings"
 	"github.com/mattn/go-runewidth"
@@ -48,15 +50,90 @@ func (p Position) Subtract(other Position) Position {
 // positionAtEndOfString calculates the position of the
 // p at the end of the given string.
 func positionAtEndOfStringLine(str string, columns istrings.Width, line int) Position {
-	pos := positionAtEndOfReaderLine(strings.NewReader(str), columns, line)
-	return pos
+	return positionAtEndOfReaderLine(strings.NewReader(str), columns, line)
 }
 
 // positionAtEndOfString calculates the position
 // at the end of the given string.
 func positionAtEndOfString(str string, columns istrings.Width) Position {
-	pos := positionAtEndOfReader(strings.NewReader(str), columns)
-	return pos
+	return positionAtEndOfReader(strings.NewReader(str), columns)
+}
+
+// Returns the index of the first character on the specified line (terminal row).
+// If the line wraps because its contents are longer than the current columns in the terminal
+// then the index of the first character of the first word of the specified line gets returned
+// (the word may begin the line before or a few lines before and it's taken into consideration).
+//
+// The unique behaviour is intentional, this function has been designed for use in lexing.
+// In order to improve performance the lexer only receives the visible part of the text.
+// But the tokens could be incorrect if a token spanning multiple lines (because of wrapping)
+// gets divided. This functions is meant to alleviate this effect.
+func indexOfFirstTokenOnLine(input string, columns istrings.Width, line int) istrings.ByteNumber {
+	if len(input) == 0 || line == 0 {
+		return 0
+	}
+
+	str := input
+	var indexOfWord istrings.ByteNumber
+	var lastCharSize istrings.ByteNumber
+	var down int
+	var right istrings.Width
+	var i istrings.ByteNumber
+
+charLoop:
+	for {
+		char, size := utf8.DecodeRuneInString(str)
+		i += lastCharSize
+		if size == 0 {
+			break charLoop
+		}
+		str = str[size:]
+		lastCharSize = istrings.ByteNumber(size)
+
+		switch char {
+		case '\r':
+			char, size := utf8.DecodeRuneInString(str)
+			i += lastCharSize
+			if size == 0 {
+				break charLoop
+			}
+			str = str[size:]
+			lastCharSize = istrings.ByteNumber(size)
+
+			if char == '\n' {
+				down++
+				right = 0
+				indexOfWord = i + 1
+				if down >= line {
+					break charLoop
+				}
+			}
+		case '\n':
+			down++
+			right = 0
+			indexOfWord = i + 1
+			if down >= line {
+				break charLoop
+			}
+		default:
+			right += istrings.Width(runewidth.RuneWidth(char))
+			if right > columns {
+				right = istrings.Width(runewidth.RuneWidth(char))
+				down++
+				if down >= line {
+					break charLoop
+				}
+			}
+			if unicode.IsSpace(char) {
+				indexOfWord = i + 1
+			}
+		}
+	}
+
+	if indexOfWord >= istrings.ByteNumber(len(input)) {
+		return istrings.ByteNumber(len(input)) - 1
+	}
+	return indexOfWord
 }
 
 // positionAtEndOfReader calculates the position
