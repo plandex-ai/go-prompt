@@ -74,6 +74,8 @@ This release aims to make the code a bit cleaner, fix a couple of bugs and provi
 - Rename `prompt.OptionShowCompletionAtStart` to `prompt.WithShowCompletionAtStart`
 - Rename `prompt.OptionBreakLineCallback` to `prompt.WithBreakLineCallback`
 - Rename `prompt.OptionExitChecker` to `prompt.WithExitChecker`
+- Change the signature of `Completer` from `func(Document) []Suggest` to `func(Document) (suggestions []Suggest, startChar, endChar istrings.RuneNumber)`
+- Change the signature of `KeyBindFunc` from `func(*Buffer)` to `func(p *Prompt) (rerender bool)`
 
 ### Fixed
 

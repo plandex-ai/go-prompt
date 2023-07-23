@@ -159,13 +159,12 @@ func executor(in string) {
 }
 
 func completer(in prompt.Document) ([]prompt.Suggest, istrings.RuneNumber, istrings.RuneNumber) {
-	currentIndex := in.CurrentRuneIndex()
+	endIndex := in.CurrentRuneIndex()
 	w := in.GetWordBeforeCursor()
 	if w == "" {
 		return []prompt.Suggest{}, 0, 0
 	}
-	startIndex := currentIndex - istrings.RuneCount(w)
-	endIndex := currentIndex
+	startIndex := endIndex - istrings.RuneCount(w)
 	return prompt.FilterHasPrefix(suggestions, w, true), startIndex, endIndex
 }
 
