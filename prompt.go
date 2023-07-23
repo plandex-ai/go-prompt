@@ -160,7 +160,6 @@ func (p *Prompt) feed(b []byte) (shouldExit bool, rerender bool, userInput *User
 
 	cols := p.renderer.UserInputColumns()
 	rows := p.renderer.row
-	rerender = true
 
 	switch key {
 	case Enter, ControlJ, ControlM:
