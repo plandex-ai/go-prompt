@@ -154,7 +154,9 @@ func (p *Prompt) feed(b []byte) (shouldExit bool, rerender bool, userInput *User
 	p.Buffer.lastKeyStroke = key
 	// completion
 	completing := p.completion.Completing()
-	p.handleCompletionKeyBinding(b, key, completing)
+	if p.handleCompletionKeyBinding(b, key, completing) {
+		return false, true, nil
+	}
 
 	cols := p.renderer.UserInputColumns()
 	rows := p.renderer.row
@@ -238,7 +240,7 @@ func (p *Prompt) feed(b []byte) (shouldExit bool, rerender bool, userInput *User
 	return shouldExit, rerender, userInput
 }
 
-func (p *Prompt) handleCompletionKeyBinding(b []byte, key Key, completing bool) {
+func (p *Prompt) handleCompletionKeyBinding(b []byte, key Key, completing bool) (handled bool) {
 	p.completion.shouldUpdate = true
 	cols := p.renderer.UserInputColumns()
 	rows := p.renderer.row
@@ -252,16 +254,19 @@ keySwitch:
 			p.updateSuggestions(func() {
 				p.completion.Next()
 			})
+			return true
 		}
 	case ControlI:
 		p.updateSuggestions(func() {
 			p.completion.Next()
 		})
+		return true
 	case Up:
 		if completing {
 			p.updateSuggestions(func() {
 				p.completion.Previous()
 			})
+			return true
 		}
 	case Tab:
 		if completionLen > 0 {
@@ -270,7 +275,7 @@ keySwitch:
 				p.completion.Next()
 			})
 
-			break
+			return true
 		}
 
 		// if there are no suggestions insert indentation
@@ -286,13 +291,14 @@ keySwitch:
 			}
 		}
 		p.Buffer.InsertTextMoveCursor(string(newBytes), cols, rows, false)
+		return true
 	case BackTab:
 		if completionLen > 0 {
 			// If there are any suggestions, select the previous one
 			p.updateSuggestions(func() {
 				p.completion.Previous()
 			})
-			break
+			return true
 		}
 
 		text := p.Buffer.Document().CurrentLineBeforeCursor()
@@ -302,6 +308,7 @@ keySwitch:
 			}
 		}
 		p.Buffer.DeleteBeforeCursor(istrings.RuneNumber(p.renderer.indentSize), cols, rows)
+		return true
 	default:
 		if s, ok := p.completion.GetSelectedSuggestion(); ok {
 			w := p.Buffer.Document().GetWordBeforeCursorUntilSeparator(p.completion.wordSeparator)
@@ -315,6 +322,7 @@ keySwitch:
 		}
 		p.completion.Reset()
 	}
+	return false
 }
 
 func (p *Prompt) updateSuggestions(fn func()) {
@@ -519,7 +527,7 @@ func (p *Prompt) CursorLeft(count istrings.RuneNumber) bool {
 	cols := p.renderer.UserInputColumns()
 	previousCursor := b.DisplayCursorPosition(cols)
 
-	rerender := p.Buffer.CursorLeft(count, cols, p.renderer.row) || p.completionReset
+	rerender := p.Buffer.CursorLeft(count, cols, p.renderer.row) || p.completionReset || len(p.completion.tmp) > 0
 	if rerender {
 		return true
 	}
@@ -538,7 +546,7 @@ func (p *Prompt) CursorRight(count istrings.RuneNumber) bool {
 	cols := p.renderer.UserInputColumns()
 	previousCursor := b.DisplayCursorPosition(cols)
 
-	rerender := p.Buffer.CursorRight(count, cols, p.renderer.row) || p.completionReset
+	rerender := p.Buffer.CursorRight(count, cols, p.renderer.row) || p.completionReset || len(p.completion.tmp) > 0
 	if rerender {
 		return true
 	}
@@ -557,7 +565,7 @@ func (p *Prompt) CursorUp(count int) bool {
 	cols := p.renderer.UserInputColumns()
 	previousCursor := b.DisplayCursorPosition(cols)
 
-	rerender := p.Buffer.CursorUp(count, cols, p.renderer.row) || p.completionReset
+	rerender := p.Buffer.CursorUp(count, cols, p.renderer.row) || p.completionReset || len(p.completion.tmp) > 0
 	if rerender {
 		return true
 	}
@@ -576,7 +584,7 @@ func (p *Prompt) CursorDown(count int) bool {
 	cols := p.renderer.UserInputColumns()
 	previousCursor := b.DisplayCursorPosition(cols)
 
-	rerender := p.Buffer.CursorDown(count, cols, p.renderer.row) || p.completionReset
+	rerender := p.Buffer.CursorDown(count, cols, p.renderer.row) || p.completionReset || len(p.completion.tmp) > 0
 	if rerender {
 		return true
 	}

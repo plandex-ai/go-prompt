@@ -99,7 +99,8 @@ func (c *CompletionManager) update() {
 	}
 
 	if c.selected >= len(c.tmp) {
-		c.Reset()
+		c.selected = -1
+		c.verticalScroll = 0
 	} else if c.selected < -1 {
 		c.selected = len(c.tmp) - 1
 		c.verticalScroll = len(c.tmp) - max
