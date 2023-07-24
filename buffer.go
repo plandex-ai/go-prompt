@@ -179,6 +179,7 @@ func (b *Buffer) DeleteBeforeCursor(count istrings.RuneNumber, columns istrings.
 			cursorPosition: b.cursorPosition - istrings.RuneNumber(len([]rune(deleted))),
 		}, columns, rows)
 	}
+	b.RecalculateStartLine(columns, rows)
 	return
 }
 
@@ -205,6 +206,7 @@ func (b *Buffer) Delete(count istrings.RuneNumber, col istrings.Width, row int) 
 		)
 
 		deleted := string(deletedRunes)
+		b.RecalculateStartLine(col, row)
 		return deleted
 	}
 

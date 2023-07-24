@@ -21,15 +21,20 @@ package main
 import (
 	"fmt"
 	"github.com/elk-language/go-prompt"
+	pstrings "github.com/elk-language/go-prompt/strings"
 )
 
-func completer(d prompt.Document) []prompt.Suggest {
+func completer(d prompt.Document) ([]prompt.Suggest, pstrings.RuneNumber, pstrings.RuneNumber) {
+	endIndex := d.CurrentRuneIndex()
+	w := d.GetWordBeforeCursor()
+	startIndex := endIndex - pstrings.RuneCount(w)
+
 	s := []prompt.Suggest{
 		{Text: "users", Description: "Store the username and age"},
 		{Text: "articles", Description: "Store the article text posted by user"},
 		{Text: "comments", Description: "Store the text commented to articles"},
 	}
-	return prompt.FilterHasPrefix(s, d.GetWordBeforeCursor(), true)
+	return prompt.FilterHasPrefix(s, w, true), startIndex, endIndex
 }
 
 func main() {

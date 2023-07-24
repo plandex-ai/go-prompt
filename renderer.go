@@ -250,6 +250,7 @@ func (r *Renderer) renderText(lexer Lexer, input string, startLine int) {
 	for _, char := range input {
 		if lineCharIndex >= col || char == '\n' {
 			lineNumber++
+			lineCharIndex = 0
 			if lineNumber-1 < startLine {
 				continue
 			}
@@ -258,7 +259,6 @@ func (r *Renderer) renderText(lexer Lexer, input string, startLine int) {
 			}
 			lineBuffer.WriteRune('\n')
 			r.renderLine(prefix, lineBuffer.String(), r.inputTextColor)
-			lineCharIndex = 0
 			lineBuffer.Reset()
 			if char != '\n' {
 				lineBuffer.WriteRune(char)
@@ -271,11 +271,11 @@ func (r *Renderer) renderText(lexer Lexer, input string, startLine int) {
 			continue
 		}
 
+		lineCharIndex += istrings.GetRuneWidth(char)
 		if lineNumber < startLine {
 			continue
 		}
 		lineBuffer.WriteRune(char)
-		lineCharIndex += istrings.GetRuneWidth(char)
 	}
 
 	r.renderLine(prefix, lineBuffer.String(), r.inputTextColor)
@@ -376,6 +376,7 @@ tokenLoop:
 		for _, char := range text {
 			if lineCharIndex >= col || char == '\n' {
 				lineNumber++
+				lineCharIndex = 0
 				if lineNumber-1 < startLine {
 					continue charLoop
 				}
@@ -385,7 +386,6 @@ tokenLoop:
 				lineBuffer = append(lineBuffer, '\n')
 				r.writeColor(lineBuffer, token.Color())
 				r.renderPrefix(multilinePrefix)
-				lineCharIndex = 0
 				lineBuffer = lineBuffer[:0]
 				if char != '\n' {
 					size := utf8.EncodeRune(runeBuffer, char)
@@ -395,12 +395,12 @@ tokenLoop:
 				continue charLoop
 			}
 
+			lineCharIndex += istrings.GetRuneWidth(char)
 			if lineNumber < startLine {
 				continue charLoop
 			}
 			size := utf8.EncodeRune(runeBuffer, char)
 			lineBuffer = append(lineBuffer, runeBuffer[:size]...)
-			lineCharIndex += istrings.GetRuneWidth(char)
 		}
 		if len(lineBuffer) > 0 {
 			r.writeColor(lineBuffer, token.Color())
