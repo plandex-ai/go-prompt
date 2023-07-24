@@ -138,25 +138,11 @@ var emacsKeyBindings = []KeyBind{
 	// Cut the Word before the cursor.
 	{
 		Key: ControlW,
-		Fn: func(p *Prompt) bool {
-			p.Buffer.DeleteBeforeCursor(
-				istrings.RuneCount(p.Buffer.Document().GetWordBeforeCursorWithSpace()),
-				p.renderer.col,
-				p.renderer.row,
-			)
-			return true
-		},
+		Fn:  DeleteWordBeforeCursor,
 	},
 	{
 		Key: AltBackspace,
-		Fn: func(p *Prompt) bool {
-			p.Buffer.DeleteBeforeCursor(
-				istrings.RuneCount(p.Buffer.Document().GetWordBeforeCursorWithSpace()),
-				p.renderer.col,
-				p.renderer.row,
-			)
-			return true
-		},
+		Fn:  DeleteWordBeforeCursor,
 	},
 	// Clear the Screen, similar to the clear command
 	{

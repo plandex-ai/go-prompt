@@ -37,3 +37,12 @@ func GoRightChar(p *Prompt) bool {
 func GoLeftChar(p *Prompt) bool {
 	return p.CursorLeft(1)
 }
+
+func DeleteWordBeforeCursor(p *Prompt) bool {
+	p.Buffer.DeleteBeforeCursor(
+		istrings.RuneCount(p.Buffer.Document().GetWordBeforeCursorWithSpace()),
+		p.renderer.col,
+		p.renderer.row,
+	)
+	return true
+}
