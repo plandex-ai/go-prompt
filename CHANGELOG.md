@@ -5,8 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 25.07.2023
 
-## [1.0.0]
+[Diff](https://github.com/elk-language/go-prompt/compare/v1.0.1...elk-language:go-prompt:v1.0.2)
+
+### Added
+
+- `prompt.Token` has new methods:
+  - `BackgroundColor() prompt.Color` - define the background color for the token
+  - `DisplayAttributes() []prompt.DisplayAttribute` - define the font eg. bold, italic, underline
+- `prompt.NewSimpleToken` has new options:
+  - `prompt.SimpleTokenWithColor(c Color) SimpleTokenOption`
+  - `prompt.SimpleTokenWithBackgroundColor(c Color) SimpleTokenOption`
+  - `prompt.SimpleTokenWithDisplayAttributes(attrs ...DisplayAttribute) SimpleTokenOption`
+- `prompt.Writer` has new methods:
+  - `prompt.SetDisplayAttributes(fg, bg Color, attrs ...DisplayAttribute)`
+
+### Changed
+
+- change the signature of `prompt.NewSimpleToken` from `func NewSimpleToken(color Color, firstIndex, lastIndex istrings.ByteNumber) *SimpleToken` to `func NewSimpleToken(firstIndex, lastIndex istrings.ByteNumber, opts ...SimpleTokenOption) *SimpleToken`
+
+## [1.0.1] - 25.07.2023
+
+[Diff](https://github.com/elk-language/go-prompt/compare/v1.0.0...elk-language:go-prompt:v1.0.1)
+
+### Added
+
+- `prompt.Token` has a new method `FirstByteIndex() strings.ByteNumber`
+
+
+## [1.0.0] - 25.07.2023
 
 [Diff](https://github.com/elk-language/go-prompt/compare/v0.2.6...elk-language:go-prompt:v1.0.0)
 

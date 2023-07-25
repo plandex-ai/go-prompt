@@ -125,8 +125,8 @@ func (p *Prompt) Run() {
 			}
 		case w := <-winSizeCh:
 			p.renderer.UpdateWinSize(w)
-			p.Buffer.ResetStartLine()
-			p.Buffer.RecalculateStartLine(p.renderer.UserInputColumns(), int(p.renderer.row))
+			p.Buffer.resetStartLine()
+			p.Buffer.recalculateStartLine(p.renderer.UserInputColumns(), int(p.renderer.row))
 			p.renderer.Render(p.Buffer, p.completion, p.lexer)
 		case code := <-exitCh:
 			p.renderer.BreakLine(p.Buffer, p.lexer)

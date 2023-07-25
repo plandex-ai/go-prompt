@@ -70,7 +70,7 @@ func TestEagerLexerNext(t *testing.T) {
 func charLex(s string) []Token {
 	var result []Token
 	for i := range s {
-		result = append(result, NewSimpleToken(0, istrings.ByteNumber(i), istrings.ByteNumber(i)))
+		result = append(result, NewSimpleToken(istrings.ByteNumber(i), istrings.ByteNumber(i)))
 	}
 
 	return result

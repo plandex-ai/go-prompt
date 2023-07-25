@@ -297,8 +297,7 @@ func (r *Renderer) writeStringColor(text string, color Color) {
 	}
 }
 
-func (r *Renderer) writeColor(b []byte, color Color) {
-	r.out.SetColor(color, r.inputBGColor, false)
+func (r *Renderer) write(b []byte) {
 	if _, err := r.out.Write(b); err != nil {
 		panic(err)
 	}
@@ -366,20 +365,28 @@ tokenLoop:
 		var currentFirstByteIndex istrings.ByteNumber
 		var currentLastByteIndex istrings.ByteNumber
 		var tokenColor Color
+		var tokenBackgroundColor Color
+		var tokenDisplayAttributes []DisplayAttribute
 		var noToken bool
 		if ok {
 			currentFirstByteIndex = token.FirstByteIndex()
 			currentLastByteIndex = token.LastByteIndex()
 			tokenColor = token.Color()
+			tokenBackgroundColor = token.BackgroundColor()
+			tokenDisplayAttributes = token.DisplayAttributes()
 		} else if previousByteIndex == istrings.Len(input)-1 {
 			break tokenLoop
 		} else {
 			currentFirstByteIndex = istrings.Len(input)
-			tokenColor = DefaultColor
+			tokenColor = r.inputTextColor
+			tokenBackgroundColor = r.inputBGColor
+			tokenDisplayAttributes = nil
 			noToken = true
 		}
 
-		color := DefaultColor
+		color := r.inputTextColor
+		backgroundColor := r.inputBGColor
+		displayAttributes := tokenDisplayAttributes
 		text := input[previousByteIndex+1 : currentFirstByteIndex]
 		previousByteIndex = currentLastByteIndex
 		lineBuffer = lineBuffer[:0]
@@ -400,7 +407,8 @@ tokenLoop:
 						break tokenLoop
 					}
 					lineBuffer = append(lineBuffer, '\n')
-					r.writeColor(lineBuffer, color)
+					r.out.SetDisplayAttributes(color, backgroundColor, displayAttributes...)
+					r.write(lineBuffer)
 					r.renderPrefix(multilinePrefix)
 					lineBuffer = lineBuffer[:0]
 					if char != '\n' {
@@ -419,7 +427,8 @@ tokenLoop:
 				lineBuffer = append(lineBuffer, runeBuffer[:size]...)
 			}
 			if len(lineBuffer) > 0 {
-				r.writeColor(lineBuffer, color)
+				r.out.SetDisplayAttributes(color, backgroundColor, displayAttributes...)
+				r.write(lineBuffer)
 			}
 
 			if !interToken {
@@ -430,12 +439,15 @@ tokenLoop:
 				break tokenLoop
 			}
 			color = tokenColor
+			backgroundColor = tokenBackgroundColor
+			displayAttributes = tokenDisplayAttributes
 			text = input[currentFirstByteIndex : currentLastByteIndex+1]
 			lineBuffer = lineBuffer[:0]
 			interToken = false
 		}
 	}
 
+	r.out.SetDisplayAttributes(r.inputTextColor, r.inputBGColor, DisplayReset)
 }
 
 // BreakLine to break line.

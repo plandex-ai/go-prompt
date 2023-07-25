@@ -15,30 +15,69 @@ type Lexer interface {
 
 // Token is a single unit of text returned by a Lexer.
 type Token interface {
-	Color() Color                        // Color of the token
+	Color() Color // Color of the token's text
+	BackgroundColor() Color
+	DisplayAttributes() []DisplayAttribute
 	FirstByteIndex() istrings.ByteNumber // Index of the last byte of this token
 	LastByteIndex() istrings.ByteNumber  // Index of the last byte of this token
 }
 
 // SimpleToken as the default implementation of Token.
 type SimpleToken struct {
-	color          Color
-	lastByteIndex  istrings.ByteNumber
-	firstByteIndex istrings.ByteNumber
+	color             Color
+	backgroundColor   Color
+	displayAttributes []DisplayAttribute
+	lastByteIndex     istrings.ByteNumber
+	firstByteIndex    istrings.ByteNumber
 }
 
-// Create a new SimpleToken.
-func NewSimpleToken(color Color, firstIndex, lastIndex istrings.ByteNumber) *SimpleToken {
-	return &SimpleToken{
-		color:          color,
-		firstByteIndex: firstIndex,
-		lastByteIndex:  lastIndex,
+type SimpleTokenOption func(*SimpleToken)
+
+func SimpleTokenWithColor(c Color) SimpleTokenOption {
+	return func(t *SimpleToken) {
+		t.color = c
 	}
 }
 
-// Retrieve the color of this token.
+func SimpleTokenWithBackgroundColor(c Color) SimpleTokenOption {
+	return func(t *SimpleToken) {
+		t.backgroundColor = c
+	}
+}
+
+func SimpleTokenWithDisplayAttributes(attrs ...DisplayAttribute) SimpleTokenOption {
+	return func(t *SimpleToken) {
+		t.displayAttributes = attrs
+	}
+}
+
+// Create a new SimpleToken.
+func NewSimpleToken(firstIndex, lastIndex istrings.ByteNumber, opts ...SimpleTokenOption) *SimpleToken {
+	t := &SimpleToken{
+		firstByteIndex: firstIndex,
+		lastByteIndex:  lastIndex,
+	}
+
+	for _, opt := range opts {
+		opt(t)
+	}
+
+	return t
+}
+
+// Retrieve the text color of this token.
 func (t *SimpleToken) Color() Color {
 	return t.color
+}
+
+// Retrieve the background color of this token.
+func (t *SimpleToken) BackgroundColor() Color {
+	return t.backgroundColor
+}
+
+// Retrieve the display attributes of this token eg. bold, underline.
+func (t *SimpleToken) DisplayAttributes() []DisplayAttribute {
+	return t.displayAttributes
 }
 
 // The index of the last byte of the lexeme.

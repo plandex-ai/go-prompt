@@ -32,7 +32,11 @@ func charLexer(line string) []prompt.Token {
 			color = prompt.White
 		}
 		lastByteIndex := strings.ByteNumber(i + utf8.RuneLen(value) - 1)
-		element := prompt.NewSimpleToken(color, strings.ByteNumber(i), lastByteIndex)
+		element := prompt.NewSimpleToken(
+			strings.ByteNumber(i),
+			lastByteIndex,
+			prompt.SimpleTokenWithColor(color),
+		)
 
 		elements = append(elements, element)
 	}
@@ -67,7 +71,11 @@ func wordLexer(line string) []prompt.Token {
 				color = prompt.White
 			}
 
-			element := prompt.NewSimpleToken(color, firstByte, currentByte-1)
+			element := prompt.NewSimpleToken(
+				firstByte,
+				currentByte-1,
+				prompt.SimpleTokenWithColor(color),
+			)
 			elements = append(elements, element)
 			wordIndex++
 			firstCharSeen = false
@@ -84,11 +92,14 @@ func wordLexer(line string) []prompt.Token {
 		} else {
 			color = prompt.White
 		}
-		element := prompt.NewSimpleToken(color, firstByte, currentByte+strings.ByteNumber(utf8.RuneLen(lastChar))-1)
+		element := prompt.NewSimpleToken(
+			firstByte,
+			currentByte+strings.ByteNumber(utf8.RuneLen(lastChar))-1,
+			prompt.SimpleTokenWithColor(color),
+		)
 		elements = append(elements, element)
 	}
 
-	prompt.Log("tokens: %#v", elements)
 	return elements
 }
 

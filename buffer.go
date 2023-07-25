@@ -9,17 +9,26 @@ import (
 
 // Buffer emulates the console buffer.
 type Buffer struct {
-	workingLines   []string // The working lines. Similar to history
-	workingIndex   int      // index of the current line
-	startLine      int      // Line number of the first visible line in the terminal (0-indexed)
-	cursorPosition istrings.RuneNumber
-	cacheDocument  *Document
-	lastKeyStroke  Key
+	workingLines    []string // The working lines. Similar to history
+	workingIndex    int      // index of the current line
+	startLine       int      // Line number of the first visible line in the terminal (0-indexed)
+	cursorPosition  istrings.RuneNumber
+	cacheDocument   *Document
+	preferredColumn istrings.RuneNumber // Remember the original column for the next up/down movement.
+	lastKeyStroke   Key
 }
 
 // Text returns string of the current line.
 func (b *Buffer) Text() string {
 	return b.workingLines[b.workingIndex]
+}
+
+func (b *Buffer) resetPreferredColumn() {
+	b.preferredColumn = -1
+}
+
+func (b *Buffer) updatePreferredColumn() {
+	b.preferredColumn = b.Document().CursorPositionCol()
 }
 
 // Document method to return document instance from the current text and cursor position.
@@ -80,16 +89,17 @@ func (b *Buffer) insertText(text string, columns istrings.Width, rows int, overw
 
 	if moveCursor {
 		b.cursorPosition += istrings.RuneCount(text)
-		b.RecalculateStartLine(columns, rows)
+		b.recalculateStartLine(columns, rows)
+		b.updatePreferredColumn()
 	}
 }
 
-func (b *Buffer) ResetStartLine() {
+func (b *Buffer) resetStartLine() {
 	b.startLine = 0
 }
 
 // Calculates the startLine once again and returns true when it's been changed.
-func (b *Buffer) RecalculateStartLine(columns istrings.Width, rows int) bool {
+func (b *Buffer) recalculateStartLine(columns istrings.Width, rows int) bool {
 	origStartLine := b.startLine
 	pos := b.DisplayCursorPosition(columns)
 	if pos.Y > b.startLine+rows-1 {
@@ -110,7 +120,8 @@ func (b *Buffer) RecalculateStartLine(columns istrings.Width, rows int) bool {
 func (b *Buffer) setText(text string, col istrings.Width, row int) {
 	debug.Assert(b.cursorPosition <= istrings.RuneCount(text), "length of input should be shorter than cursor position")
 	b.workingLines[b.workingIndex] = text
-	b.RecalculateStartLine(col, row)
+	b.recalculateStartLine(col, row)
+	b.resetPreferredColumn()
 }
 
 // Set cursor position. Return whether it changed.
@@ -126,7 +137,8 @@ func (b *Buffer) setDocument(d *Document, columns istrings.Width, rows int) {
 	b.cacheDocument = d
 	b.setCursorPosition(d.cursorPosition) // Call before setText because setText check the relation between cursorPosition and line length.
 	b.setText(d.Text, columns, rows)
-	b.RecalculateStartLine(columns, rows)
+	b.recalculateStartLine(columns, rows)
+	b.resetPreferredColumn()
 }
 
 // Move to the left on the current line.
@@ -134,7 +146,8 @@ func (b *Buffer) setDocument(d *Document, columns istrings.Width, rows int) {
 func (b *Buffer) CursorLeft(count istrings.RuneNumber, columns istrings.Width, rows int) bool {
 	l := b.Document().GetCursorLeftPosition(count)
 	b.cursorPosition += l
-	return b.RecalculateStartLine(columns, rows)
+	b.updatePreferredColumn()
+	return b.recalculateStartLine(columns, rows)
 }
 
 // Move to the right on the current line.
@@ -142,25 +155,24 @@ func (b *Buffer) CursorLeft(count istrings.RuneNumber, columns istrings.Width, r
 func (b *Buffer) CursorRight(count istrings.RuneNumber, columns istrings.Width, rows int) bool {
 	l := b.Document().GetCursorRightPosition(count)
 	b.cursorPosition += l
-	return b.RecalculateStartLine(columns, rows)
+	b.updatePreferredColumn()
+	return b.recalculateStartLine(columns, rows)
 }
 
 // CursorUp move cursor to the previous line.
 // (for multi-line edit).
 // Returns true when the view should be rerendered.
 func (b *Buffer) CursorUp(count int, columns istrings.Width, rows int) bool {
-	orig := b.Document().CursorPositionCol()
-	b.cursorPosition += b.Document().GetCursorUpPosition(count, orig)
-	return b.RecalculateStartLine(columns, rows)
+	b.cursorPosition += b.Document().GetCursorUpPosition(count, b.preferredColumn)
+	return b.recalculateStartLine(columns, rows)
 }
 
 // CursorDown move cursor to the next line.
 // (for multi-line edit).
 // Returns true when the view should be rerendered.
 func (b *Buffer) CursorDown(count int, columns istrings.Width, rows int) bool {
-	orig := b.Document().CursorPositionCol()
-	b.cursorPosition += b.Document().GetCursorDownPosition(count, orig)
-	return b.RecalculateStartLine(columns, rows)
+	b.cursorPosition += b.Document().GetCursorDownPosition(count, b.preferredColumn)
+	return b.recalculateStartLine(columns, rows)
 }
 
 // DeleteBeforeCursor delete specified number of characters before cursor and return the deleted text.
@@ -179,7 +191,8 @@ func (b *Buffer) DeleteBeforeCursor(count istrings.RuneNumber, columns istrings.
 			cursorPosition: b.cursorPosition - istrings.RuneNumber(len([]rune(deleted))),
 		}, columns, rows)
 	}
-	b.RecalculateStartLine(columns, rows)
+	b.recalculateStartLine(columns, rows)
+	b.updatePreferredColumn()
 	return
 }
 
@@ -206,7 +219,6 @@ func (b *Buffer) Delete(count istrings.RuneNumber, col istrings.Width, row int) 
 		)
 
 		deleted := string(deletedRunes)
-		b.RecalculateStartLine(col, row)
 		return deleted
 	}
 
@@ -243,9 +255,10 @@ func (b *Buffer) SwapCharactersBeforeCursor(col istrings.Width, row int) {
 // NewBuffer is constructor of Buffer struct.
 func NewBuffer() (b *Buffer) {
 	b = &Buffer{
-		workingLines: []string{""},
-		workingIndex: 0,
-		startLine:    0,
+		workingLines:    []string{""},
+		workingIndex:    0,
+		startLine:       0,
+		preferredColumn: -1,
 	}
 	return
 }
