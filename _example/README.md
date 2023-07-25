@@ -9,6 +9,12 @@ Uses a custom lexer that colours every character with an even index green.
 
 Shows you how to hook up a custom lexer for syntax highlighting.
 
+## automatic indenter
+
+Inserts a newline and indentation when the <kbd>Enter</kbd> key is pressed unless the input ends with a curly brace `}` and the amount of opening and ending braces is the same (then it gets printed).
+
+Shows you how to define a custom callback which determines whether the input is complete and should be executed or a newline with indentation should be inserted (after <kbd>Enter</kbd> has been pressed).
+
 ## bang-executor
 
 Inserts a newline when the <kbd>Enter</kbd> key is pressed unless the input ends with an exclamation point `!` (then it gets printed).

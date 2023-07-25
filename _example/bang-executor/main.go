@@ -23,5 +23,5 @@ func ExecuteOnEnter(input string, indentSize int) (int, bool) {
 }
 
 func executor(s string) {
-	fmt.Println("You printed: " + s)
+	fmt.Println("Your input: " + s)
 }

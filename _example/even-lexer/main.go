@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/elk-language/go-prompt"
@@ -11,13 +12,15 @@ import (
 func main() {
 	p := prompt.New(
 		executor,
-		prompt.WithLexer(prompt.NewEagerLexer(lexer)),
+		prompt.WithLexer(prompt.NewEagerLexer(wordLexer)),
+		prompt.WithLexer(prompt.NewEagerLexer(charLexer)), // the last one overrides the other
 	)
 
 	p.Run()
 }
 
-func lexer(line string) []prompt.Token {
+// colors every other character green
+func charLexer(line string) []prompt.Token {
 	var elements []prompt.Token
 
 	for i, value := range line {
@@ -37,6 +40,47 @@ func lexer(line string) []prompt.Token {
 	return elements
 }
 
+// colors every other word green
+func wordLexer(line string) []prompt.Token {
+	if len(line) == 0 {
+		return nil
+	}
+
+	var elements []prompt.Token
+	var currentByte strings.ByteNumber
+	var wordIndex int
+	var lastChar rune
+
+	var color prompt.Color
+	for i, char := range line {
+		currentByte = strings.ByteNumber(i)
+		if unicode.IsSpace(char) {
+			if wordIndex%2 == 0 {
+				color = prompt.Green
+			} else {
+				color = prompt.White
+			}
+
+			element := prompt.NewSimpleToken(color, currentByte)
+			elements = append(elements, element)
+			wordIndex++
+			continue
+		}
+		lastChar = char
+	}
+	if !unicode.IsSpace(lastChar) {
+		if wordIndex%2 == 0 {
+			color = prompt.Green
+		} else {
+			color = prompt.White
+		}
+		element := prompt.NewSimpleToken(color, currentByte)
+		elements = append(elements, element)
+	}
+
+	return elements
+}
+
 func executor(s string) {
-	fmt.Println("You printed: " + s)
+	fmt.Println("Your input: " + s)
 }

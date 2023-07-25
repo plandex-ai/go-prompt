@@ -10,6 +10,16 @@ It's a great library but it's been abandoned
 for quite a while.
 This project aims to continue its development.
 
+The library has been rewritten in many aspects, fixing existing bugs and adding new essential functionality.
+
+Most notable changes include:
+- Support for custom syntax highlighting with a lexer
+- Multiline editing
+- A scrolling buffer is used for displaying the current content which makes it possible to edit text of arbitrary length (only the visible part of the text is rendered)
+- Support for automatic indentation when pressing <kbd>Enter</kbd> and the input is incomplete or for executing the input when it is complete. This is determined by a custom callback function.
+
+I highly encourage you to see the [changelog](CHANGELOG.md) which fully documents the changes that have been made.
+
 ---
 
 A library for building powerful interactive prompts inspired by [python-prompt-toolkit](https://github.com/jonathanslenders/python-prompt-toolkit),
@@ -49,9 +59,21 @@ func main() {
 
 ## Features
 
+### Automatic indentation with a custom callback
+
+![automatic indentation](readme/automatic-indentation.gif)
+
+### Multiline editing with scrolling
+
+![multiline editing](readme/multiline-editing.gif)
+
+### Custom syntax highlighting
+
+![syntax highlighting](readme/syntax-highlighting.gif)
+
 ### Powerful auto-completion
 
-[![demo](https://github.com/c-bata/assets/raw/master/go-prompt/kube-prompt.gif)](https://github.com/c-bata/kube-prompt)
+[![autocompletion](https://github.com/c-bata/assets/raw/master/go-prompt/kube-prompt.gif)](https://github.com/c-bata/kube-prompt)
 
 (This is a GIF animation of kube-prompt.)
 
