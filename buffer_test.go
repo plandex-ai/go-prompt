@@ -144,6 +144,7 @@ func TestBuffer_CursorDown(t *testing.T) {
 	b := NewBuffer()
 	b.InsertTextMoveCursor("line1\nline2", DefColCount, DefRowCount, false)
 	b.cursorPosition = 3
+	b.preferredColumn = -1
 
 	// Normally going down
 	b.CursorDown(1, DefColCount, DefRowCount)

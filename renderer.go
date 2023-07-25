@@ -409,6 +409,7 @@ tokenLoop:
 					lineBuffer = append(lineBuffer, '\n')
 					r.out.SetDisplayAttributes(color, backgroundColor, displayAttributes...)
 					r.write(lineBuffer)
+					r.resetFormatting()
 					r.renderPrefix(multilinePrefix)
 					lineBuffer = lineBuffer[:0]
 					if char != '\n' {
@@ -429,6 +430,7 @@ tokenLoop:
 			if len(lineBuffer) > 0 {
 				r.out.SetDisplayAttributes(color, backgroundColor, displayAttributes...)
 				r.write(lineBuffer)
+				r.resetFormatting()
 			}
 
 			if !interToken {
@@ -447,6 +449,10 @@ tokenLoop:
 		}
 	}
 
+	r.resetFormatting()
+}
+
+func (r *Renderer) resetFormatting() {
 	r.out.SetDisplayAttributes(r.inputTextColor, r.inputBGColor, DisplayReset)
 }
 
