@@ -363,49 +363,79 @@ func (r *Renderer) lex(lexer Lexer, input string, startLine int) {
 tokenLoop:
 	for {
 		token, ok := lexer.Next()
-		if !ok {
+		var currentFirstByteIndex istrings.ByteNumber
+		var currentLastByteIndex istrings.ByteNumber
+		var tokenColor Color
+		var noToken bool
+		if ok {
+			currentFirstByteIndex = token.FirstByteIndex()
+			currentLastByteIndex = token.LastByteIndex()
+			tokenColor = token.Color()
+		} else if previousByteIndex == istrings.Len(input)-1 {
 			break tokenLoop
+		} else {
+			currentFirstByteIndex = istrings.Len(input)
+			tokenColor = DefaultColor
+			noToken = true
 		}
 
-		currentByteIndex := token.LastByteIndex()
-		text := input[previousByteIndex+1 : currentByteIndex+1]
-		previousByteIndex = currentByteIndex
+		color := DefaultColor
+		text := input[previousByteIndex+1 : currentFirstByteIndex]
+		previousByteIndex = currentLastByteIndex
 		lineBuffer = lineBuffer[:0]
+		interToken := true
 
-	charLoop:
-		for _, char := range text {
-			if lineCharIndex >= col || char == '\n' {
-				lineNumber++
-				lineCharIndex = 0
-				if lineNumber-1 < startLine {
+	repeatLoop:
+		for {
+
+		charLoop:
+			for _, char := range text {
+				if lineCharIndex >= col || char == '\n' {
+					lineNumber++
+					lineCharIndex = 0
+					if lineNumber-1 < startLine {
+						continue charLoop
+					}
+					if lineNumber >= endLine {
+						break tokenLoop
+					}
+					lineBuffer = append(lineBuffer, '\n')
+					r.writeColor(lineBuffer, color)
+					r.renderPrefix(multilinePrefix)
+					lineBuffer = lineBuffer[:0]
+					if char != '\n' {
+						size := utf8.EncodeRune(runeBuffer, char)
+						lineBuffer = append(lineBuffer, runeBuffer[:size]...)
+						lineCharIndex += istrings.GetRuneWidth(char)
+					}
 					continue charLoop
 				}
-				if lineNumber >= endLine {
-					break tokenLoop
+
+				lineCharIndex += istrings.GetRuneWidth(char)
+				if lineNumber < startLine {
+					continue charLoop
 				}
-				lineBuffer = append(lineBuffer, '\n')
-				r.writeColor(lineBuffer, token.Color())
-				r.renderPrefix(multilinePrefix)
-				lineBuffer = lineBuffer[:0]
-				if char != '\n' {
-					size := utf8.EncodeRune(runeBuffer, char)
-					lineBuffer = append(lineBuffer, runeBuffer[:size]...)
-					lineCharIndex += istrings.GetRuneWidth(char)
-				}
-				continue charLoop
+				size := utf8.EncodeRune(runeBuffer, char)
+				lineBuffer = append(lineBuffer, runeBuffer[:size]...)
+			}
+			if len(lineBuffer) > 0 {
+				r.writeColor(lineBuffer, color)
 			}
 
-			lineCharIndex += istrings.GetRuneWidth(char)
-			if lineNumber < startLine {
-				continue charLoop
+			if !interToken {
+				break repeatLoop
 			}
-			size := utf8.EncodeRune(runeBuffer, char)
-			lineBuffer = append(lineBuffer, runeBuffer[:size]...)
-		}
-		if len(lineBuffer) > 0 {
-			r.writeColor(lineBuffer, token.Color())
+
+			if noToken {
+				break tokenLoop
+			}
+			color = tokenColor
+			text = input[currentFirstByteIndex : currentLastByteIndex+1]
+			lineBuffer = lineBuffer[:0]
+			interToken = false
 		}
 	}
+
 }
 
 // BreakLine to break line.

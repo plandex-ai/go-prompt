@@ -70,7 +70,7 @@ func TestEagerLexerNext(t *testing.T) {
 func charLex(s string) []Token {
 	var result []Token
 	for i := range s {
-		result = append(result, NewSimpleToken(0, istrings.ByteNumber(i)))
+		result = append(result, NewSimpleToken(0, istrings.ByteNumber(i), istrings.ByteNumber(i)))
 	}
 
 	return result
@@ -86,8 +86,8 @@ func TestEagerLexerInit(t *testing.T) {
 			lexer: &EagerLexer{
 				lexFunc: charLex,
 				tokens: []Token{
-					&SimpleToken{lastByteIndex: 2},
-					&SimpleToken{lastByteIndex: 10},
+					&SimpleToken{firstByteIndex: 2, lastByteIndex: 2},
+					&SimpleToken{firstByteIndex: 10, lastByteIndex: 10},
 				},
 				currentIndex: 11,
 			},
@@ -95,9 +95,9 @@ func TestEagerLexerInit(t *testing.T) {
 			want: &EagerLexer{
 				lexFunc: charLex,
 				tokens: []Token{
-					&SimpleToken{lastByteIndex: 0},
-					&SimpleToken{lastByteIndex: 1},
-					&SimpleToken{lastByteIndex: 2},
+					&SimpleToken{firstByteIndex: 0, lastByteIndex: 0},
+					&SimpleToken{firstByteIndex: 1, lastByteIndex: 1},
+					&SimpleToken{firstByteIndex: 2, lastByteIndex: 2},
 				},
 				currentIndex: 0,
 			},

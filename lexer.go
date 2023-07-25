@@ -15,21 +15,24 @@ type Lexer interface {
 
 // Token is a single unit of text returned by a Lexer.
 type Token interface {
-	Color() Color                       // Color of the token
-	LastByteIndex() istrings.ByteNumber // Index of the last byte of this token
+	Color() Color                        // Color of the token
+	FirstByteIndex() istrings.ByteNumber // Index of the last byte of this token
+	LastByteIndex() istrings.ByteNumber  // Index of the last byte of this token
 }
 
 // SimpleToken as the default implementation of Token.
 type SimpleToken struct {
-	color         Color
-	lastByteIndex istrings.ByteNumber
+	color          Color
+	lastByteIndex  istrings.ByteNumber
+	firstByteIndex istrings.ByteNumber
 }
 
 // Create a new SimpleToken.
-func NewSimpleToken(color Color, index istrings.ByteNumber) *SimpleToken {
+func NewSimpleToken(color Color, firstIndex, lastIndex istrings.ByteNumber) *SimpleToken {
 	return &SimpleToken{
-		color:         color,
-		lastByteIndex: index,
+		color:          color,
+		firstByteIndex: firstIndex,
+		lastByteIndex:  lastIndex,
 	}
 }
 
@@ -38,9 +41,14 @@ func (t *SimpleToken) Color() Color {
 	return t.color
 }
 
-// Retrieve the text that this token represents.
+// The index of the last byte of the lexeme.
 func (t *SimpleToken) LastByteIndex() istrings.ByteNumber {
 	return t.lastByteIndex
+}
+
+// The index of the first byte of the lexeme.
+func (t *SimpleToken) FirstByteIndex() istrings.ByteNumber {
+	return t.firstByteIndex
 }
 
 // LexerFunc is a function implementing
