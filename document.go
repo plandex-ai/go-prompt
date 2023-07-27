@@ -7,6 +7,7 @@ import (
 
 	"github.com/elk-language/go-prompt/bisect"
 	istrings "github.com/elk-language/go-prompt/strings"
+	"github.com/rivo/uniseg"
 	"golang.org/x/exp/utf8string"
 )
 
@@ -142,7 +143,7 @@ func (d *Document) FindStartOfPreviousWord() istrings.ByteNumber {
 // of the text before the cursor until the start of the previous word.
 func (d *Document) FindRuneNumberUntilStartOfPreviousWord() istrings.RuneNumber {
 	x := d.TextBeforeCursor()
-	return istrings.RuneCount(x[d.FindStartOfPreviousWordWithSpace():])
+	return istrings.RuneCountInString(x[d.FindStartOfPreviousWordWithSpace():])
 }
 
 // FindStartOfPreviousWordWithSpace is almost the same as FindStartOfPreviousWord.
@@ -344,7 +345,7 @@ func (d *Document) CursorPositionRow() (row istrings.RuneNumber) {
 
 // TextEndPositionRow returns the row of the end of the current text. (0-based.)
 func (d *Document) TextEndPositionRow() (row istrings.RuneNumber) {
-	textLength := istrings.RuneCount(d.Text)
+	textLength := istrings.RuneCountInString(d.Text)
 	if textLength == 0 {
 		return 0
 	}
@@ -359,10 +360,40 @@ func (d *Document) CursorPositionCol() (col istrings.RuneNumber) {
 	return
 }
 
-// GetCursorLeftPosition returns the relative position for cursor left.
-func (d *Document) GetCursorLeftPosition(count istrings.RuneNumber) istrings.RuneNumber {
+// Returns the amount of runes that the cursors should be moved by.
+// The `count` argument tells this function by how many graphemes (visible characters)
+// the cursor should be moved (to the left).
+func (d *Document) GetCursorLeftPosition(count istrings.GraphemeNumber) istrings.RuneNumber {
 	if count < 0 {
 		return d.GetCursorRightPosition(-count)
+	}
+	if d.cursorPosition == 0 {
+		return 0
+	}
+	text := d.TextBeforeCursor()
+	g := uniseg.NewGraphemes(text)
+	graphemeLength := istrings.GraphemeCount(text)
+	var currentGraphemeIndex istrings.GraphemeNumber
+	var currentPosition istrings.RuneNumber
+
+	for g.Next() {
+		if currentGraphemeIndex >= graphemeLength-count {
+			break
+		}
+		currentPosition += istrings.RuneNumber(len(g.Runes()))
+		currentGraphemeIndex++
+	}
+
+	result := d.cursorPosition - currentPosition
+	return -result
+}
+
+// Returns the amount of runes that the cursors should be moved by.
+// The `count` argument tells this function by how many runes
+// the cursor should be moved (to the left).
+func (d *Document) GetCursorLeftPositionRunes(count istrings.RuneNumber) istrings.RuneNumber {
+	if count < 0 {
+		return d.GetCursorRightPositionRunes(-count)
 	}
 	runeSlice := []rune(d.Text)
 	var counter istrings.RuneNumber
@@ -377,10 +408,38 @@ func (d *Document) GetCursorLeftPosition(count istrings.RuneNumber) istrings.Run
 	return counter
 }
 
-// GetCursorRightPosition returns relative position for cursor right.
-func (d *Document) GetCursorRightPosition(count istrings.RuneNumber) istrings.RuneNumber {
+// Returns the amount of runes that the cursors should be moved by.
+// The `count` argument tells this function by how many graphemes (visible characters)
+// the cursor should be moved (to the right).
+func (d *Document) GetCursorRightPosition(count istrings.GraphemeNumber) istrings.RuneNumber {
 	if count < 0 {
 		return d.GetCursorLeftPosition(-count)
+	}
+	text := d.TextAfterCursor()
+	if len(text) == 0 {
+		return 0
+	}
+
+	g := uniseg.NewGraphemes(text)
+	var currentGraphemeIndex istrings.GraphemeNumber
+	var currentPosition istrings.RuneNumber
+
+	for g.Next() {
+		if currentGraphemeIndex >= count {
+			break
+		}
+		currentPosition += istrings.RuneNumber(len(g.Runes()))
+		currentGraphemeIndex++
+	}
+	return currentPosition
+}
+
+// Returns the amount of runes that the cursors should be moved by.
+// The `count` argument tells this function by how many runes
+// the cursor should be moved (to the right).
+func (d *Document) GetCursorRightPositionRunes(count istrings.RuneNumber) istrings.RuneNumber {
+	if count < 0 {
+		return d.GetCursorLeftPositionRunes(-count)
 	}
 	runeSlice := []rune(d.Text)
 	var counter istrings.RuneNumber
@@ -496,12 +555,12 @@ func (d *Document) OnLastLine() bool {
 
 // GetEndOfLinePosition returns relative position for the end of this line.
 func (d *Document) GetEndOfLinePosition() istrings.RuneNumber {
-	return istrings.RuneCount(d.CurrentLineAfterCursor())
+	return istrings.RuneCountInString(d.CurrentLineAfterCursor())
 }
 
 // GetStartOfLinePosition returns relative position for the start of this line.
 func (d *Document) GetStartOfLinePosition() istrings.RuneNumber {
-	return istrings.RuneCount(d.CurrentLineBeforeCursor())
+	return istrings.RuneCountInString(d.CurrentLineBeforeCursor())
 }
 
 // GetStartOfLinePosition returns relative position for the start of this line.
@@ -521,7 +580,7 @@ func (d *Document) FindStartOfFirstWordOfLine() istrings.RuneNumber {
 	}
 
 	if counter == 0 {
-		return istrings.RuneCount(line)
+		return istrings.RuneCountInString(line)
 	}
 
 	return counter

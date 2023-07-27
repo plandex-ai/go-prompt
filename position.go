@@ -1,11 +1,8 @@
 package prompt
 
 import (
-	"io"
-	"strings"
-
 	istrings "github.com/elk-language/go-prompt/strings"
-	"github.com/mattn/go-runewidth"
+	"github.com/rivo/uniseg"
 )
 
 // Position stores the coordinates
@@ -48,49 +45,32 @@ func (p Position) Subtract(other Position) Position {
 // positionAtEndOfString calculates the position of the
 // p at the end of the given string.
 func positionAtEndOfStringLine(str string, columns istrings.Width, line int) Position {
-	return positionAtEndOfReaderLine(strings.NewReader(str), columns, line)
-}
-
-// positionAtEndOfString calculates the position
-// at the end of the given string.
-func positionAtEndOfString(str string, columns istrings.Width) Position {
-	return positionAtEndOfReader(strings.NewReader(str), columns)
-}
-
-// positionAtEndOfReader calculates the position
-// at the end of the given io.Reader.
-func positionAtEndOfReader(reader io.RuneReader, columns istrings.Width) Position {
 	var down int
 	var right istrings.Width
+	g := uniseg.NewGraphemes(str)
 
 charLoop:
-	for {
-		char, _, err := reader.ReadRune()
-		if err != nil {
-			break charLoop
-		}
+	for g.Next() {
+		runes := g.Runes()
 
-		switch char {
-		case '\r':
-			char, _, err := reader.ReadRune()
-			if err != nil {
+		if len(runes) == 1 && runes[0] == '\n' {
+			if down == line {
 				break charLoop
 			}
-
-			if char == '\n' {
-				down++
-				right = 0
-			}
-		case '\n':
 			down++
 			right = 0
-		default:
-			right += istrings.Width(runewidth.RuneWidth(char))
-			if right == columns {
-				right = 0
-				down++
-			}
 		}
+
+		right += istrings.Width(g.Width())
+		if right > columns {
+			if down == line {
+				right = columns - 1
+				break charLoop
+			}
+			right = istrings.Width(g.Width())
+			down++
+		}
+
 	}
 
 	return Position{
@@ -99,49 +79,26 @@ charLoop:
 	}
 }
 
-// positionAtEndOfReaderLine calculates the position
-// at the given line of the given io.Reader.
-func positionAtEndOfReaderLine(reader io.RuneReader, columns istrings.Width, line int) Position {
+// positionAtEndOfString calculates the position
+// at the end of the given string.
+func positionAtEndOfString(str string, columns istrings.Width) Position {
 	var down int
 	var right istrings.Width
+	g := uniseg.NewGraphemes(str)
 
-charLoop:
-	for {
-		char, _, err := reader.ReadRune()
-		if err != nil {
-			break charLoop
-		}
+	for g.Next() {
+		runes := g.Runes()
 
-		switch char {
-		case '\r':
-			char, _, err := reader.ReadRune()
-			if err != nil {
-				break charLoop
-			}
-
-			if char == '\n' {
-				if down == line {
-					break charLoop
-				}
-				down++
-				right = 0
-			}
-		case '\n':
-			if down == line {
-				break charLoop
-			}
+		if len(runes) == 1 && runes[0] == '\n' {
 			down++
 			right = 0
-		default:
-			right += istrings.Width(runewidth.RuneWidth(char))
-			if right > columns {
-				if down == line {
-					right = columns - 1
-					break charLoop
-				}
-				right = istrings.Width(runewidth.RuneWidth(char))
-				down++
-			}
+			continue
+		}
+
+		right += istrings.Width(g.Width())
+		if right == columns {
+			right = 0
+			down++
 		}
 	}
 

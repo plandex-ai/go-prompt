@@ -164,7 +164,7 @@ func completer(in prompt.Document) ([]prompt.Suggest, istrings.RuneNumber, istri
 	if w == "" {
 		return []prompt.Suggest{}, 0, 0
 	}
-	startIndex := endIndex - istrings.RuneCount(w)
+	startIndex := endIndex - istrings.RuneCountInString(w)
 	return prompt.FilterHasPrefix(suggestions, w, true), startIndex, endIndex
 }
 

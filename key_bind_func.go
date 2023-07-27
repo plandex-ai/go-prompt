@@ -7,13 +7,13 @@ import (
 // GoLineEnd Go to the End of the line
 func GoLineEnd(p *Prompt) bool {
 	x := []rune(p.Buffer.Document().TextAfterCursor())
-	return p.CursorRight(istrings.RuneNumber(len(x)))
+	return p.CursorRightRunes(istrings.RuneNumber(len(x)))
 }
 
 // GoLineBeginning Go to the beginning of the line
 func GoLineBeginning(p *Prompt) bool {
 	x := []rune(p.Buffer.Document().TextBeforeCursor())
-	return p.CursorLeft(istrings.RuneNumber(len(x)))
+	return p.CursorLeftRunes(istrings.RuneNumber(len(x)))
 }
 
 // DeleteChar Delete character under the cursor
@@ -40,7 +40,7 @@ func GoLeftChar(p *Prompt) bool {
 
 func DeleteWordBeforeCursor(p *Prompt) bool {
 	p.Buffer.DeleteBeforeCursor(
-		istrings.RuneCount(p.Buffer.Document().GetWordBeforeCursorWithSpace()),
+		istrings.RuneCountInString(p.Buffer.Document().GetWordBeforeCursorWithSpace()),
 		p.renderer.col,
 		p.renderer.row,
 	)

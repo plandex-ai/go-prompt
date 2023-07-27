@@ -2,6 +2,8 @@ package prompt
 
 import (
 	"bytes"
+	"fmt"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -138,14 +140,14 @@ func (p *Prompt) Run() {
 	}
 }
 
-// func Log(format string, a ...any) {
-// 	f, err := os.OpenFile("log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-// 	if err != nil {
-// 		log.Fatalf("error opening file: %v", err)
-// 	}
-// 	defer f.Close()
-// 	fmt.Fprintf(f, format+"\n", a...)
-// }
+func Log(format string, a ...any) {
+	f, err := os.OpenFile("log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	defer f.Close()
+	fmt.Fprintf(f, format+"\n", a...)
+}
 
 func (p *Prompt) feed(b []byte) (shouldExit bool, rerender bool, userInput *UserInput) {
 	key := GetKey(b)
@@ -349,7 +351,7 @@ func (p *Prompt) updateSuggestions(fn func()) {
 	// delete the previous selection
 	if !newSelected {
 		p.Buffer.DeleteBeforeCursor(
-			istrings.RuneCount(prevSuggestion.Text)-(prevEnd-prevStart),
+			istrings.RuneCountInString(prevSuggestion.Text)-(prevEnd-prevStart),
 			cols,
 			rows,
 		)
@@ -358,7 +360,7 @@ func (p *Prompt) updateSuggestions(fn func()) {
 
 	// delete previous selection and render the new one
 	p.Buffer.DeleteBeforeCursor(
-		istrings.RuneCount(prevSuggestion.Text),
+		istrings.RuneCountInString(prevSuggestion.Text),
 		cols,
 		rows,
 	)
@@ -518,33 +520,40 @@ func (p *Prompt) setup() {
 	p.renderer.UpdateWinSize(p.reader.GetWinSize())
 }
 
-// Move to the left on the current line.
+// Move to the left on the current line  by the given amount of graphemes (visible characters).
 // Returns true when the view should be rerendered.
-func (p *Prompt) CursorLeft(count istrings.RuneNumber) bool {
-	b := p.Buffer
-	cols := p.renderer.UserInputColumns()
-	previousCursor := b.DisplayCursorPosition(cols)
-
-	rerender := p.Buffer.CursorLeft(count, cols, p.renderer.row) || p.completionReset || len(p.completion.tmp) > 0
-	if rerender {
-		return true
-	}
-
-	newCursor := b.DisplayCursorPosition(cols)
-	p.renderer.previousCursor = newCursor
-	p.renderer.move(previousCursor, newCursor)
-	p.renderer.flush()
-	return false
+func (p *Prompt) CursorLeft(count istrings.GraphemeNumber) bool {
+	return promptCursorHorizontalMove(p, p.Buffer.CursorLeft, count)
 }
 
-// Move the cursor to the right on the current line.
+// Move to the left on the current line by the given amount of runes.
 // Returns true when the view should be rerendered.
-func (p *Prompt) CursorRight(count istrings.RuneNumber) bool {
+func (p *Prompt) CursorLeftRunes(count istrings.RuneNumber) bool {
+	return promptCursorHorizontalMove(p, p.Buffer.CursorLeftRunes, count)
+}
+
+// Move the cursor to the right on the current line by the given amount of graphemes (visible characters).
+// Returns true when the view should be rerendered.
+func (p *Prompt) CursorRight(count istrings.GraphemeNumber) bool {
+	return promptCursorHorizontalMove(p, p.Buffer.CursorRight, count)
+}
+
+// Move the cursor to the right on the current line by the given amount of runes.
+// Returns true when the view should be rerendered.
+func (p *Prompt) CursorRightRunes(count istrings.RuneNumber) bool {
+	return promptCursorHorizontalMove(p, p.Buffer.CursorRightRunes, count)
+}
+
+type horizontalCursorModifier[CountT ~int] func(CountT, istrings.Width, int) bool
+
+// Move to the left or right on the current line.
+// Returns true when the view should be rerendered.
+func promptCursorHorizontalMove[CountT ~int](p *Prompt, modifierFunc horizontalCursorModifier[CountT], count CountT) bool {
 	b := p.Buffer
 	cols := p.renderer.UserInputColumns()
 	previousCursor := b.DisplayCursorPosition(cols)
 
-	rerender := p.Buffer.CursorRight(count, cols, p.renderer.row) || p.completionReset || len(p.completion.tmp) > 0
+	rerender := modifierFunc(count, cols, p.renderer.row) || p.completionReset || len(p.completion.tmp) > 0
 	if rerender {
 		return true
 	}

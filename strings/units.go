@@ -8,6 +8,10 @@ type ByteNumber int
 // of runes in a string, array or slice.
 type RuneNumber int
 
+// Numeric type that represents the amount
+// of grapheme clusters in a string, array or slice.
+type GraphemeNumber int
+
 // Numeric type that represents the visible
 // width of characters in a string as seen in a terminal emulator.
 type Width int

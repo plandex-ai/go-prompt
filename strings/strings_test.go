@@ -2,9 +2,40 @@ package strings_test
 
 import (
 	"fmt"
+	"testing"
 
 	"github.com/elk-language/go-prompt/strings"
 )
+
+func TestGetWidth(t *testing.T) {
+	tests := []struct {
+		in   string
+		want strings.Width
+	}{
+		{
+			in:   "foo",
+			want: 3,
+		},
+		{
+			in:   "🇵🇱",
+			want: 2,
+		},
+		{
+			in:   "🙆🏿‍♂️",
+			want: 2,
+		},
+		{
+			in:   "日本語",
+			want: 6,
+		},
+	}
+
+	for _, tc := range tests {
+		if got := strings.GetWidth(tc.in); got != tc.want {
+			t.Errorf("Should be %#v, but got %#v, for %#v", tc.want, got, tc.in)
+		}
+	}
+}
 
 func ExampleIndexNotByte() {
 	fmt.Println(strings.IndexNotByte("golang", 'g'))

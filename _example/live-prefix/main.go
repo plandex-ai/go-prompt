@@ -21,7 +21,7 @@ func executor(in string) {
 func completer(in prompt.Document) ([]prompt.Suggest, istrings.RuneNumber, istrings.RuneNumber) {
 	endIndex := in.CurrentRuneIndex()
 	w := in.GetWordBeforeCursor()
-	startIndex := endIndex - istrings.RuneCount(w)
+	startIndex := endIndex - istrings.RuneCountInString(w)
 
 	s := []prompt.Suggest{
 		{Text: "users", Description: "Store the username and age"},

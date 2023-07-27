@@ -4,6 +4,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/mattn/go-runewidth"
+	"github.com/rivo/uniseg"
 )
 
 // Get the length of the string in bytes.
@@ -12,13 +13,27 @@ func Len(s string) ByteNumber {
 }
 
 // Get the length of the string in runes.
-func RuneCount(s string) RuneNumber {
+func RuneCountInString(s string) RuneNumber {
 	return RuneNumber(utf8.RuneCountInString(s))
 }
 
-// Get the width of the string (how many columns it takes upt in the terminal).
-func GetWidth(s string) Width {
-	return Width(runewidth.StringWidth(s))
+// Get the length of the byte slice in runes.
+func RuneCount(b []byte) RuneNumber {
+	return RuneNumber(utf8.RuneCount(b))
+}
+
+// Returns the number of horizontal cells needed to print the given
+// text. It splits the text into its grapheme clusters, calculates each
+// cluster's width, and adds them up to a total.
+func GetWidth(text string) Width {
+	return Width(uniseg.StringWidth(text))
+}
+
+// Returns the number of horizontal cells needed to print the given
+// text. It splits the text into its grapheme clusters, calculates each
+// cluster's width, and adds them up to a total.
+func GraphemeCount(text string) GraphemeNumber {
+	return GraphemeNumber(uniseg.GraphemeClusterCount(text))
 }
 
 // Get the width of the rune (how many columns it takes upt in the terminal).

@@ -40,6 +40,14 @@ func TestPositionAtEndOfString(t *testing.T) {
 				Y: 0,
 			},
 		},
+		"complex emoji": {
+			input:   "🙆🏿‍♂️",
+			columns: 20,
+			want: Position{
+				X: 2,
+				Y: 0,
+			},
+		},
 		"one-line fits in columns": {
 			input:   "foo bar",
 			columns: 20,

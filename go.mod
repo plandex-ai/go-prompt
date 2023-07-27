@@ -12,4 +12,7 @@ require (
 	golang.org/x/sys v0.1.0
 )
 
-require github.com/mattn/go-isatty v0.0.12 // indirect
+require (
+	github.com/mattn/go-isatty v0.0.12 // indirect
+	github.com/rivo/uniseg v0.4.4 // indirect
+)

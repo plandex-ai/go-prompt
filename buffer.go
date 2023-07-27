@@ -69,13 +69,13 @@ func (b *Buffer) insertText(text string, columns istrings.Width, rows int, overw
 	if overwrite {
 		overwritten := string(currentTextRunes[cursor:])
 		if len(overwritten) >= int(cursor)+len(text) {
-			overwritten = string(currentTextRunes[cursor : cursor+istrings.RuneCount(text)])
+			overwritten = string(currentTextRunes[cursor : cursor+istrings.RuneCountInString(text)])
 		}
 		if i := strings.IndexAny(overwritten, "\n"); i != -1 {
 			overwritten = overwritten[:i]
 		}
 		b.setText(
-			string(currentTextRunes[:cursor])+text+string(currentTextRunes[cursor+istrings.RuneCount(overwritten):]),
+			string(currentTextRunes[:cursor])+text+string(currentTextRunes[cursor+istrings.RuneCountInString(overwritten):]),
 			columns,
 			rows,
 		)
@@ -88,7 +88,7 @@ func (b *Buffer) insertText(text string, columns istrings.Width, rows int, overw
 	}
 
 	if moveCursor {
-		b.cursorPosition += istrings.RuneCount(text)
+		b.cursorPosition += istrings.RuneCountInString(text)
 		b.recalculateStartLine(columns, rows)
 		b.updatePreferredColumn()
 	}
@@ -118,7 +118,7 @@ func (b *Buffer) recalculateStartLine(columns istrings.Width, rows int) bool {
 // (When doing this, make sure that the cursor_position is valid for this text.
 // text/cursor_position should be consistent at any time, otherwise set a Document instead.)
 func (b *Buffer) setText(text string, col istrings.Width, row int) {
-	debug.Assert(b.cursorPosition <= istrings.RuneCount(text), "length of input should be shorter than cursor position")
+	debug.Assert(b.cursorPosition <= istrings.RuneCountInString(text), "length of input should be shorter than cursor position")
 	b.workingLines[b.workingIndex] = text
 	b.recalculateStartLine(col, row)
 	b.resetPreferredColumn()
@@ -141,20 +141,32 @@ func (b *Buffer) setDocument(d *Document, columns istrings.Width, rows int) {
 	b.resetPreferredColumn()
 }
 
-// Move to the left on the current line.
+// Move to the left on the current line by the given amount of graphemes.
 // Returns true when the view should be rerendered.
-func (b *Buffer) CursorLeft(count istrings.RuneNumber, columns istrings.Width, rows int) bool {
-	l := b.Document().GetCursorLeftPosition(count)
-	b.cursorPosition += l
-	b.updatePreferredColumn()
-	return b.recalculateStartLine(columns, rows)
+func (b *Buffer) CursorLeft(count istrings.GraphemeNumber, columns istrings.Width, rows int) bool {
+	return b.cursorHorizontalMove(b.Document().GetCursorLeftPosition(count), columns, rows)
 }
 
-// Move to the right on the current line.
+// Move to the left on the current line by the given amount of runes.
 // Returns true when the view should be rerendered.
-func (b *Buffer) CursorRight(count istrings.RuneNumber, columns istrings.Width, rows int) bool {
-	l := b.Document().GetCursorRightPosition(count)
-	b.cursorPosition += l
+func (b *Buffer) CursorLeftRunes(count istrings.RuneNumber, columns istrings.Width, rows int) bool {
+	return b.cursorHorizontalMove(b.Document().GetCursorLeftPositionRunes(count), columns, rows)
+}
+
+// Move to the right on the current line by the given amount of graphemes.
+// Returns true when the view should be rerendered.
+func (b *Buffer) CursorRight(count istrings.GraphemeNumber, columns istrings.Width, rows int) bool {
+	return b.cursorHorizontalMove(b.Document().GetCursorRightPosition(count), columns, rows)
+}
+
+// Move to the right on the current line by the given amount of runes.
+// Returns true when the view should be rerendered.
+func (b *Buffer) CursorRightRunes(count istrings.RuneNumber, columns istrings.Width, rows int) bool {
+	return b.cursorHorizontalMove(b.Document().GetCursorRightPositionRunes(count), columns, rows)
+}
+
+func (b *Buffer) cursorHorizontalMove(count istrings.RuneNumber, columns istrings.Width, rows int) bool {
+	b.cursorPosition += count
 	b.updatePreferredColumn()
 	return b.recalculateStartLine(columns, rows)
 }
