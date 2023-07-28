@@ -46,8 +46,8 @@ var emacsKeyBindings = []KeyBind{
 	{
 		Key: ControlE,
 		Fn: func(p *Prompt) bool {
-			return p.CursorRight(
-				istrings.RuneCount(p.Buffer.Document().CurrentLineAfterCursor()),
+			return p.CursorRightRunes(
+				istrings.RuneCountInString(p.Buffer.Document().CurrentLineAfterCursor()),
 			)
 		},
 	},
@@ -55,7 +55,7 @@ var emacsKeyBindings = []KeyBind{
 	{
 		Key: ControlA,
 		Fn: func(p *Prompt) bool {
-			return p.CursorLeft(
+			return p.CursorLeftRunes(
 				p.Buffer.Document().FindStartOfFirstWordOfLine(),
 			)
 		},
@@ -64,8 +64,8 @@ var emacsKeyBindings = []KeyBind{
 	{
 		Key: ControlK,
 		Fn: func(p *Prompt) bool {
-			p.Buffer.Delete(
-				istrings.RuneCount(p.Buffer.Document().CurrentLineAfterCursor()),
+			p.Buffer.DeleteRunes(
+				istrings.RuneCountInString(p.Buffer.Document().CurrentLineAfterCursor()),
 				p.renderer.col,
 				p.renderer.row,
 			)
@@ -76,8 +76,8 @@ var emacsKeyBindings = []KeyBind{
 	{
 		Key: ControlU,
 		Fn: func(p *Prompt) bool {
-			p.Buffer.DeleteBeforeCursor(
-				istrings.RuneCount(p.Buffer.Document().CurrentLineBeforeCursor()),
+			p.Buffer.DeleteBeforeCursorRunes(
+				istrings.RuneCountInString(p.Buffer.Document().CurrentLineBeforeCursor()),
 				p.renderer.col,
 				p.renderer.row,
 			)
@@ -114,7 +114,7 @@ var emacsKeyBindings = []KeyBind{
 	{
 		Key: AltRight,
 		Fn: func(p *Prompt) bool {
-			return p.CursorRight(
+			return p.CursorRightRunes(
 				p.Buffer.Document().FindRuneNumberUntilEndOfCurrentWord(),
 			)
 		},
@@ -130,7 +130,7 @@ var emacsKeyBindings = []KeyBind{
 	{
 		Key: AltLeft,
 		Fn: func(p *Prompt) bool {
-			return p.CursorLeft(
+			return p.CursorLeftRunes(
 				p.Buffer.Document().FindRuneNumberUntilStartOfPreviousWord(),
 			)
 		},

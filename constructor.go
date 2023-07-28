@@ -286,7 +286,7 @@ func WithExitChecker(fn ExitChecker) Option {
 	}
 }
 
-func DefaultExecuteOnEnterCallback(input string, indentSize int) (int, bool) {
+func DefaultExecuteOnEnterCallback(buffer *Buffer, indentSize int) (int, bool) {
 	return 0, true
 }
 

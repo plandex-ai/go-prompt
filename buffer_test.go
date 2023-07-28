@@ -25,8 +25,8 @@ func TestBuffer_InsertText(t *testing.T) {
 		t.Errorf("Text should be %#v, got %#v", "some_text", b.Text())
 	}
 
-	if b.cursorPosition != istrings.RuneCount("some_text") {
-		t.Errorf("cursorPosition should be %#v, got %#v", istrings.RuneCount("some_text"), b.cursorPosition)
+	if b.cursorPosition != istrings.RuneCountInString("some_text") {
+		t.Errorf("cursorPosition should be %#v, got %#v", istrings.RuneCountInString("some_text"), b.cursorPosition)
 	}
 }
 
@@ -38,8 +38,8 @@ func TestBuffer_InsertText_Overwrite(t *testing.T) {
 		t.Errorf("Text should be %#v, got %#v", "ABC", b.Text())
 	}
 
-	if b.cursorPosition != istrings.RuneCount("ABC") {
-		t.Errorf("cursorPosition should be %#v, got %#v", istrings.RuneCount("ABC"), b.cursorPosition)
+	if b.cursorPosition != istrings.RuneCountInString("ABC") {
+		t.Errorf("cursorPosition should be %#v, got %#v", istrings.RuneCountInString("ABC"), b.cursorPosition)
 	}
 
 	b.CursorLeft(1, DefColCount, DefRowCount)
@@ -87,8 +87,8 @@ func TestBuffer_CursorMovement(t *testing.T) {
 	if b.Text() != "some_teAxt" {
 		t.Errorf("Text should be %#v, got %#v", "some_teAxt", b.Text())
 	}
-	if b.cursorPosition != istrings.RuneCount("some_teA") {
-		t.Errorf("Text should be %#v, got %#v", istrings.RuneCount("some_teA"), b.cursorPosition)
+	if b.cursorPosition != istrings.RuneCountInString("some_teA") {
+		t.Errorf("Text should be %#v, got %#v", istrings.RuneCountInString("some_teA"), b.cursorPosition)
 	}
 
 	// Moving over left character counts.
@@ -97,8 +97,8 @@ func TestBuffer_CursorMovement(t *testing.T) {
 	if b.Text() != "Asome_teAxt" {
 		t.Errorf("Text should be %#v, got %#v", "some_teAxt", b.Text())
 	}
-	if b.cursorPosition != istrings.RuneCount("A") {
-		t.Errorf("Text should be %#v, got %#v", istrings.RuneCount("some_teA"), b.cursorPosition)
+	if b.cursorPosition != istrings.RuneCountInString("A") {
+		t.Errorf("Text should be %#v, got %#v", istrings.RuneCountInString("some_teA"), b.cursorPosition)
 	}
 
 	// TODO: Going right already at right end.
@@ -148,8 +148,8 @@ func TestBuffer_CursorDown(t *testing.T) {
 
 	// Normally going down
 	b.CursorDown(1, DefColCount, DefRowCount)
-	if b.Document().cursorPosition != istrings.RuneCount("line1\nlin") {
-		t.Errorf("Should be %#v, got %#v", istrings.RuneCount("line1\nlin"), b.Document().cursorPosition)
+	if b.Document().cursorPosition != istrings.RuneCountInString("line1\nlin") {
+		t.Errorf("Should be %#v, got %#v", istrings.RuneCountInString("line1\nlin"), b.Document().cursorPosition)
 	}
 
 	// Going down to a line that's storter.
@@ -157,8 +157,8 @@ func TestBuffer_CursorDown(t *testing.T) {
 	b.InsertTextMoveCursor("long line1\na\nb", DefColCount, DefRowCount, false)
 	b.cursorPosition = 3
 	b.CursorDown(1, DefColCount, DefRowCount)
-	if b.Document().cursorPosition != istrings.RuneCount("long line1\na") {
-		t.Errorf("Should be %#v, got %#v", istrings.RuneCount("long line1\na"), b.Document().cursorPosition)
+	if b.Document().cursorPosition != istrings.RuneCountInString("long line1\na") {
+		t.Errorf("Should be %#v, got %#v", istrings.RuneCountInString("long line1\na"), b.Document().cursorPosition)
 	}
 }
 
@@ -174,8 +174,8 @@ func TestBuffer_DeleteBeforeCursor(t *testing.T) {
 	if deleted != "e" {
 		t.Errorf("Should be %#v, got %#v", deleted, "e")
 	}
-	if b.cursorPosition != istrings.RuneCount("some_t") {
-		t.Errorf("Should be %#v, got %#v", istrings.RuneCount("some_t"), b.cursorPosition)
+	if b.cursorPosition != istrings.RuneCountInString("some_t") {
+		t.Errorf("Should be %#v, got %#v", istrings.RuneCountInString("some_t"), b.cursorPosition)
 	}
 
 	// Delete over the characters length before cursor.
