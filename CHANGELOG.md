@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 28.07.2023
+
+[Diff](https://github.com/elk-language/go-prompt/compare/v1.1.0...elk-language:go-prompt:v1.1.1)
+
+### Added
+- `func (*prompt.Prompt).TerminalColumns() strings.Width`
+- `func (*prompt.Prompt).TerminalRows() int`
+
+### Changed
+- Change signatures:
+  - `prompt.ExecuteOnEnterCallback`
+    - from `func(buffer *prompt.Buffer, indentSize int) (indent int, execute bool)`
+    - to `func(p *prompt.Prompt, indentSize int) (indent int, execute bool)`
+- Change `(*Prompt).Buffer` from a public field to a public getter method
+
+
 ## [1.1.0] - 28.07.2023
 
 [Diff](https://github.com/elk-language/go-prompt/compare/v1.0.3...elk-language:go-prompt:v1.1.0)

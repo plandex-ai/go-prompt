@@ -18,8 +18,8 @@ func main() {
 	p.Run()
 }
 
-func ExecuteOnEnter(buffer *prompt.Buffer, indentSize int) (int, bool) {
-	input := buffer.Text()
+func ExecuteOnEnter(p *prompt.Prompt, indentSize int) (int, bool) {
+	input := p.Buffer().Text()
 	lines := strings.SplitAfter(input, "\n")
 	var spaces int
 	if len(lines) > 0 {

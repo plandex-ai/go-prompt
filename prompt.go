@@ -2,8 +2,6 @@ package prompt
 
 import (
 	"bytes"
-	"fmt"
-	"log"
 	"os"
 	"strings"
 	"time"
@@ -33,7 +31,7 @@ type ExitChecker func(in string, breakline bool) bool
 // If this function returns true, the Executor callback will be called
 // otherwise a newline will be added to the buffer containing user input
 // and optionally indentation made up of `indentSize * indent` spaces.
-type ExecuteOnEnterCallback func(buffer *Buffer, indentSize int) (indent int, execute bool)
+type ExecuteOnEnterCallback func(prompt *Prompt, indentSize int) (indent int, execute bool)
 
 // Completer is a function that returns
 // a slice of suggestions for the given Document.
@@ -45,7 +43,7 @@ type Completer func(Document) (suggestions []Suggest, startChar, endChar istring
 // Prompt is a core struct of go-prompt.
 type Prompt struct {
 	reader                 Reader
-	Buffer                 *Buffer
+	buffer                 *Buffer
 	renderer               *Renderer
 	executor               Executor
 	history                *History
@@ -75,10 +73,10 @@ func (p *Prompt) Run() {
 	defer p.Close()
 
 	if p.completion.showAtStart {
-		p.completion.Update(*p.Buffer.Document())
+		p.completion.Update(*p.buffer.Document())
 	}
 
-	p.renderer.Render(p.Buffer, p.completion, p.lexer)
+	p.renderer.Render(p.buffer, p.completion, p.lexer)
 
 	bufCh := make(chan []byte, 128)
 	stopReadBufCh := make(chan struct{})
@@ -93,7 +91,7 @@ func (p *Prompt) Run() {
 		select {
 		case b := <-bufCh:
 			if shouldExit, rerender, input := p.feed(b); shouldExit {
-				p.renderer.BreakLine(p.Buffer, p.lexer)
+				p.renderer.BreakLine(p.buffer, p.lexer)
 				stopReadBufCh <- struct{}{}
 				stopHandleSignalCh <- struct{}{}
 				return
@@ -107,9 +105,9 @@ func (p *Prompt) Run() {
 				debug.AssertNoError(p.reader.Close())
 				p.executor(input.input)
 
-				p.completion.Update(*p.Buffer.Document())
+				p.completion.Update(*p.buffer.Document())
 
-				p.renderer.Render(p.Buffer, p.completion, p.lexer)
+				p.renderer.Render(p.buffer, p.completion, p.lexer)
 
 				if p.exitChecker != nil && p.exitChecker(input.input, true) {
 					p.skipClose = true
@@ -121,17 +119,17 @@ func (p *Prompt) Run() {
 				go p.handleSignals(exitCh, winSizeCh, stopHandleSignalCh)
 			} else if rerender {
 				if p.completion.shouldUpdate {
-					p.completion.Update(*p.Buffer.Document())
+					p.completion.Update(*p.buffer.Document())
 				}
-				p.renderer.Render(p.Buffer, p.completion, p.lexer)
+				p.renderer.Render(p.buffer, p.completion, p.lexer)
 			}
 		case w := <-winSizeCh:
 			p.renderer.UpdateWinSize(w)
-			p.Buffer.resetStartLine()
-			p.Buffer.recalculateStartLine(p.renderer.UserInputColumns(), int(p.renderer.row))
-			p.renderer.Render(p.Buffer, p.completion, p.lexer)
+			p.buffer.resetStartLine()
+			p.buffer.recalculateStartLine(p.renderer.UserInputColumns(), int(p.renderer.row))
+			p.renderer.Render(p.buffer, p.completion, p.lexer)
 		case code := <-exitCh:
-			p.renderer.BreakLine(p.Buffer, p.lexer)
+			p.renderer.BreakLine(p.buffer, p.lexer)
 			p.Close()
 			os.Exit(code)
 		default:
@@ -140,23 +138,38 @@ func (p *Prompt) Run() {
 	}
 }
 
-func Log(format string, a ...any) {
-	f, err := os.OpenFile("log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
-	}
-	defer f.Close()
-	fmt.Fprintf(f, format+"\n", a...)
-}
+// func Log(format string, a ...any) {
+// 	f, err := os.OpenFile("log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+// 	if err != nil {
+// 		log.Fatalf("error opening file: %v", err)
+// 	}
+// 	defer f.Close()
+// 	fmt.Fprintf(f, format+"\n", a...)
+// }
 
 // Returns the configured indent size.
 func (p *Prompt) IndentSize() int {
 	return p.renderer.indentSize
 }
 
+// Returns the current amount of columns that the terminal can display.
+func (p *Prompt) TerminalColumns() istrings.Width {
+	return p.renderer.col
+}
+
+// Returns the current amount of rows that the terminal can display.
+func (p *Prompt) TerminalRows() int {
+	return p.renderer.row
+}
+
+// Returns the buffer struct.
+func (p *Prompt) Buffer() *Buffer {
+	return p.buffer
+}
+
 func (p *Prompt) feed(b []byte) (shouldExit bool, rerender bool, userInput *UserInput) {
 	key := GetKey(b)
-	p.Buffer.lastKeyStroke = key
+	p.buffer.lastKeyStroke = key
 	// completion
 	completing := p.completion.Completing()
 	if p.handleCompletionKeyBinding(b, key, completing) {
@@ -168,31 +181,31 @@ func (p *Prompt) feed(b []byte) (shouldExit bool, rerender bool, userInput *User
 
 	switch key {
 	case Enter, ControlJ, ControlM:
-		indent, execute := p.executeOnEnterCallback(p.Buffer, p.renderer.indentSize)
+		indent, execute := p.executeOnEnterCallback(p, p.renderer.indentSize)
 		if !execute {
-			p.Buffer.NewLine(cols, rows, false)
+			p.buffer.NewLine(cols, rows, false)
 
 			var indentStrBuilder strings.Builder
 			indentUnitCount := indent * p.renderer.indentSize
 			for i := 0; i < indentUnitCount; i++ {
 				indentStrBuilder.WriteRune(IndentUnit)
 			}
-			p.Buffer.InsertTextMoveCursor(indentStrBuilder.String(), cols, rows, false)
+			p.buffer.InsertTextMoveCursor(indentStrBuilder.String(), cols, rows, false)
 			break
 		}
 
-		p.renderer.BreakLine(p.Buffer, p.lexer)
-		userInput = &UserInput{input: p.Buffer.Text()}
-		p.Buffer = NewBuffer()
+		p.renderer.BreakLine(p.buffer, p.lexer)
+		userInput = &UserInput{input: p.buffer.Text()}
+		p.buffer = NewBuffer()
 		if userInput.input != "" {
 			p.history.Add(userInput.input)
 		}
 	case ControlC:
-		p.renderer.BreakLine(p.Buffer, p.lexer)
-		p.Buffer = NewBuffer()
+		p.renderer.BreakLine(p.buffer, p.lexer)
+		p.buffer = NewBuffer()
 		p.history.Clear()
 	case Up, ControlP:
-		line := p.Buffer.Document().CursorPositionRow()
+		line := p.buffer.Document().CursorPositionRow()
 		if line > 0 {
 			rerender = p.CursorUp(1)
 			return false, rerender, nil
@@ -201,13 +214,13 @@ func (p *Prompt) feed(b []byte) (shouldExit bool, rerender bool, userInput *User
 			break
 		}
 
-		if newBuf, changed := p.history.Older(p.Buffer, cols, rows); changed {
-			p.Buffer = newBuf
+		if newBuf, changed := p.history.Older(p.buffer, cols, rows); changed {
+			p.buffer = newBuf
 		}
 
 	case Down, ControlN:
-		endOfTextRow := p.Buffer.Document().TextEndPositionRow()
-		row := p.Buffer.Document().CursorPositionRow()
+		endOfTextRow := p.buffer.Document().TextEndPositionRow()
+		row := p.buffer.Document().CursorPositionRow()
 		if endOfTextRow > row {
 			rerender = p.CursorDown(1)
 			return false, rerender, nil
@@ -217,12 +230,12 @@ func (p *Prompt) feed(b []byte) (shouldExit bool, rerender bool, userInput *User
 			break
 		}
 
-		if newBuf, changed := p.history.Newer(p.Buffer, cols, rows); changed {
-			p.Buffer = newBuf
+		if newBuf, changed := p.history.Newer(p.buffer, cols, rows); changed {
+			p.buffer = newBuf
 		}
 		return false, true, nil
 	case ControlD:
-		if p.Buffer.Text() == "" {
+		if p.buffer.Text() == "" {
 			return true, true, nil
 		}
 	case NotDefined:
@@ -237,7 +250,7 @@ func (p *Prompt) feed(b []byte) (shouldExit bool, rerender bool, userInput *User
 			return false, false, nil
 		}
 
-		p.Buffer.InsertTextMoveCursor(string(b), cols, rows, false)
+		p.buffer.InsertTextMoveCursor(string(b), cols, rows, false)
 	}
 
 	shouldExit, rerender = p.handleKeyBinding(key, cols, rows)
@@ -294,7 +307,7 @@ keySwitch:
 				newBytes = append(newBytes, byt)
 			}
 		}
-		p.Buffer.InsertTextMoveCursor(string(newBytes), cols, rows, false)
+		p.buffer.InsertTextMoveCursor(string(newBytes), cols, rows, false)
 		return true
 	case BackTab:
 		if completionLen > 0 {
@@ -305,21 +318,21 @@ keySwitch:
 			return true
 		}
 
-		text := p.Buffer.Document().CurrentLineBeforeCursor()
+		text := p.buffer.Document().CurrentLineBeforeCursor()
 		for _, char := range text {
 			if char != IndentUnit {
 				break keySwitch
 			}
 		}
-		p.Buffer.DeleteBeforeCursorRunes(istrings.RuneNumber(p.renderer.indentSize), cols, rows)
+		p.buffer.DeleteBeforeCursorRunes(istrings.RuneNumber(p.renderer.indentSize), cols, rows)
 		return true
 	default:
 		if s, ok := p.completion.GetSelectedSuggestion(); ok {
-			w := p.Buffer.Document().GetWordBeforeCursorUntilSeparator(p.completion.wordSeparator)
+			w := p.buffer.Document().GetWordBeforeCursorUntilSeparator(p.completion.wordSeparator)
 			if w != "" {
-				p.Buffer.DeleteBeforeCursorRunes(istrings.RuneCountInString(w), cols, rows)
+				p.buffer.DeleteBeforeCursorRunes(istrings.RuneCountInString(w), cols, rows)
 			}
-			p.Buffer.InsertTextMoveCursor(s.Text, cols, rows, false)
+			p.buffer.InsertTextMoveCursor(s.Text, cols, rows, false)
 		}
 		if completionLen > 0 {
 			p.completionReset = true
@@ -349,13 +362,13 @@ func (p *Prompt) updateSuggestions(fn func()) {
 
 	// insert the new selection
 	if !prevSelected {
-		p.Buffer.DeleteBeforeCursorRunes(p.completion.endCharIndex-p.completion.startCharIndex, cols, rows)
-		p.Buffer.InsertTextMoveCursor(newSuggestion.Text, cols, rows, false)
+		p.buffer.DeleteBeforeCursorRunes(p.completion.endCharIndex-p.completion.startCharIndex, cols, rows)
+		p.buffer.InsertTextMoveCursor(newSuggestion.Text, cols, rows, false)
 		return
 	}
 	// delete the previous selection
 	if !newSelected {
-		p.Buffer.DeleteBeforeCursorRunes(
+		p.buffer.DeleteBeforeCursorRunes(
 			istrings.RuneCountInString(prevSuggestion.Text)-(prevEnd-prevStart),
 			cols,
 			rows,
@@ -364,13 +377,13 @@ func (p *Prompt) updateSuggestions(fn func()) {
 	}
 
 	// delete previous selection and render the new one
-	p.Buffer.DeleteBeforeCursorRunes(
+	p.buffer.DeleteBeforeCursorRunes(
 		istrings.RuneCountInString(prevSuggestion.Text),
 		cols,
 		rows,
 	)
 
-	p.Buffer.InsertTextMoveCursor(newSuggestion.Text, cols, rows, false)
+	p.buffer.InsertTextMoveCursor(newSuggestion.Text, cols, rows, false)
 }
 
 func (p *Prompt) handleKeyBinding(key Key, cols istrings.Width, rows int) (shouldExit bool, rerender bool) {
@@ -411,7 +424,7 @@ func (p *Prompt) handleKeyBinding(key Key, cols istrings.Width, rows int) (shoul
 			}
 		}
 	}
-	if p.exitChecker != nil && p.exitChecker(p.Buffer.Text(), false) {
+	if p.exitChecker != nil && p.exitChecker(p.buffer.Text(), false) {
 		shouldExit = true
 	}
 	if !executed && !rerender {
@@ -442,10 +455,10 @@ func (p *Prompt) Input() string {
 	defer p.Close()
 
 	if p.completion.showAtStart {
-		p.completion.Update(*p.Buffer.Document())
+		p.completion.Update(*p.buffer.Document())
 	}
 
-	p.renderer.Render(p.Buffer, p.completion, p.lexer)
+	p.renderer.Render(p.buffer, p.completion, p.lexer)
 	bufCh := make(chan []byte, 128)
 	stopReadBufCh := make(chan struct{})
 	go p.readBuffer(bufCh, stopReadBufCh)
@@ -454,7 +467,7 @@ func (p *Prompt) Input() string {
 		select {
 		case b := <-bufCh:
 			if shouldExit, rerender, input := p.feed(b); shouldExit {
-				p.renderer.BreakLine(p.Buffer, p.lexer)
+				p.renderer.BreakLine(p.buffer, p.lexer)
 				stopReadBufCh <- struct{}{}
 				return ""
 			} else if input != nil {
@@ -462,8 +475,8 @@ func (p *Prompt) Input() string {
 				stopReadBufCh <- struct{}{}
 				return input.input
 			} else if rerender {
-				p.completion.Update(*p.Buffer.Document())
-				p.renderer.Render(p.Buffer, p.completion, p.lexer)
+				p.completion.Update(*p.buffer.Document())
+				p.renderer.Render(p.buffer, p.completion, p.lexer)
 			}
 		default:
 			time.Sleep(10 * time.Millisecond)
@@ -528,25 +541,25 @@ func (p *Prompt) setup() {
 // Move to the left on the current line  by the given amount of graphemes (visible characters).
 // Returns true when the view should be rerendered.
 func (p *Prompt) CursorLeft(count istrings.GraphemeNumber) bool {
-	return promptCursorHorizontalMove(p, p.Buffer.CursorLeft, count)
+	return promptCursorHorizontalMove(p, p.buffer.CursorLeft, count)
 }
 
 // Move to the left on the current line by the given amount of runes.
 // Returns true when the view should be rerendered.
 func (p *Prompt) CursorLeftRunes(count istrings.RuneNumber) bool {
-	return promptCursorHorizontalMove(p, p.Buffer.CursorLeftRunes, count)
+	return promptCursorHorizontalMove(p, p.buffer.CursorLeftRunes, count)
 }
 
 // Move the cursor to the right on the current line by the given amount of graphemes (visible characters).
 // Returns true when the view should be rerendered.
 func (p *Prompt) CursorRight(count istrings.GraphemeNumber) bool {
-	return promptCursorHorizontalMove(p, p.Buffer.CursorRight, count)
+	return promptCursorHorizontalMove(p, p.buffer.CursorRight, count)
 }
 
 // Move the cursor to the right on the current line by the given amount of runes.
 // Returns true when the view should be rerendered.
 func (p *Prompt) CursorRightRunes(count istrings.RuneNumber) bool {
-	return promptCursorHorizontalMove(p, p.Buffer.CursorRightRunes, count)
+	return promptCursorHorizontalMove(p, p.buffer.CursorRightRunes, count)
 }
 
 type horizontalCursorModifier[CountT ~int] func(CountT, istrings.Width, int) bool
@@ -554,7 +567,7 @@ type horizontalCursorModifier[CountT ~int] func(CountT, istrings.Width, int) boo
 // Move to the left or right on the current line.
 // Returns true when the view should be rerendered.
 func promptCursorHorizontalMove[CountT ~int](p *Prompt, modifierFunc horizontalCursorModifier[CountT], count CountT) bool {
-	b := p.Buffer
+	b := p.buffer
 	cols := p.renderer.UserInputColumns()
 	previousCursor := b.DisplayCursorPosition(cols)
 
@@ -573,11 +586,11 @@ func promptCursorHorizontalMove[CountT ~int](p *Prompt, modifierFunc horizontalC
 // Move the cursor up.
 // Returns true when the view should be rerendered.
 func (p *Prompt) CursorUp(count int) bool {
-	b := p.Buffer
+	b := p.buffer
 	cols := p.renderer.UserInputColumns()
 	previousCursor := b.DisplayCursorPosition(cols)
 
-	rerender := p.Buffer.CursorUp(count, cols, p.renderer.row) || p.completionReset || len(p.completion.tmp) > 0
+	rerender := p.buffer.CursorUp(count, cols, p.renderer.row) || p.completionReset || len(p.completion.tmp) > 0
 	if rerender {
 		return true
 	}
@@ -592,11 +605,11 @@ func (p *Prompt) CursorUp(count int) bool {
 // Move the cursor down.
 // Returns true when the view should be rerendered.
 func (p *Prompt) CursorDown(count int) bool {
-	b := p.Buffer
+	b := p.buffer
 	cols := p.renderer.UserInputColumns()
 	previousCursor := b.DisplayCursorPosition(cols)
 
-	rerender := p.Buffer.CursorDown(count, cols, p.renderer.row) || p.completionReset || len(p.completion.tmp) > 0
+	rerender := p.buffer.CursorDown(count, cols, p.renderer.row) || p.completionReset || len(p.completion.tmp) > 0
 	if rerender {
 		return true
 	}

@@ -80,7 +80,7 @@ func WithPrefix(prefix string) Option {
 // WithInitialText can be used to set the initial buffer text.
 func WithInitialText(text string) Option {
 	return func(p *Prompt) error {
-		p.Buffer.InsertTextMoveCursor(text, p.renderer.col, int(p.renderer.row), true)
+		p.buffer.InsertTextMoveCursor(text, p.renderer.col, int(p.renderer.row), true)
 		return nil
 	}
 }
@@ -286,7 +286,7 @@ func WithExitChecker(fn ExitChecker) Option {
 	}
 }
 
-func DefaultExecuteOnEnterCallback(buffer *Buffer, indentSize int) (int, bool) {
+func DefaultExecuteOnEnterCallback(p *Prompt, indentSize int) (int, bool) {
 	return 0, true
 }
 
@@ -299,7 +299,7 @@ func New(executor Executor, opts ...Option) *Prompt {
 	pt := &Prompt{
 		reader:                 NewStdinReader(),
 		renderer:               NewRenderer(),
-		Buffer:                 NewBuffer(),
+		buffer:                 NewBuffer(),
 		executor:               executor,
 		history:                NewHistory(),
 		completion:             NewCompletionManager(6),

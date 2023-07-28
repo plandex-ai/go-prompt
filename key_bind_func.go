@@ -6,25 +6,25 @@ import (
 
 // GoLineEnd Go to the End of the line
 func GoLineEnd(p *Prompt) bool {
-	x := []rune(p.Buffer.Document().TextAfterCursor())
+	x := []rune(p.buffer.Document().TextAfterCursor())
 	return p.CursorRightRunes(istrings.RuneNumber(len(x)))
 }
 
 // GoLineBeginning Go to the beginning of the line
 func GoLineBeginning(p *Prompt) bool {
-	x := []rune(p.Buffer.Document().TextBeforeCursor())
+	x := []rune(p.buffer.Document().TextBeforeCursor())
 	return p.CursorLeftRunes(istrings.RuneNumber(len(x)))
 }
 
 // DeleteChar Delete character under the cursor
 func DeleteChar(p *Prompt) bool {
-	p.Buffer.Delete(1, p.renderer.col, p.renderer.row)
+	p.buffer.Delete(1, p.renderer.col, p.renderer.row)
 	return true
 }
 
 // DeleteBeforeChar Go to Backspace
 func DeleteBeforeChar(p *Prompt) bool {
-	p.Buffer.DeleteBeforeCursor(1, p.renderer.col, p.renderer.row)
+	p.buffer.DeleteBeforeCursor(1, p.renderer.col, p.renderer.row)
 	return true
 }
 
@@ -39,8 +39,8 @@ func GoLeftChar(p *Prompt) bool {
 }
 
 func DeleteWordBeforeCursor(p *Prompt) bool {
-	p.Buffer.DeleteBeforeCursorRunes(
-		istrings.RuneCountInString(p.Buffer.Document().GetWordBeforeCursorWithSpace()),
+	p.buffer.DeleteBeforeCursorRunes(
+		istrings.RuneCountInString(p.buffer.Document().GetWordBeforeCursorWithSpace()),
 		p.renderer.col,
 		p.renderer.row,
 	)

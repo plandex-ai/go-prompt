@@ -8,7 +8,7 @@ import (
 
 func TestEmacsKeyBindings(t *testing.T) {
 	p := New(NoopExecutor)
-	buf := p.Buffer
+	buf := p.buffer
 	buf.InsertTextMoveCursor("abcde", DefColCount, DefRowCount, false)
 	if buf.cursorPosition != istrings.RuneNumber(len("abcde")) {
 		t.Errorf("Want %d, but got %d", len("abcde"), buf.cursorPosition)
