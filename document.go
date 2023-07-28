@@ -399,7 +399,7 @@ func (d *Document) GetCursorLeftPosition(count istrings.GraphemeNumber) istrings
 	}
 	text := d.TextBeforeCursor()
 	g := uniseg.NewGraphemes(text)
-	graphemeLength := istrings.GraphemeCount(text)
+	graphemeLength := istrings.GraphemeCountInString(text)
 	var currentGraphemeIndex istrings.GraphemeNumber
 	var currentPosition istrings.RuneNumber
 

@@ -32,7 +32,7 @@ func GetWidth(text string) Width {
 // Returns the number of horizontal cells needed to print the given
 // text. It splits the text into its grapheme clusters, calculates each
 // cluster's width, and adds them up to a total.
-func GraphemeCount(text string) GraphemeNumber {
+func GraphemeCountInString(text string) GraphemeNumber {
 	return GraphemeNumber(uniseg.GraphemeClusterCount(text))
 }
 

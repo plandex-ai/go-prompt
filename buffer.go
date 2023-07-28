@@ -199,7 +199,7 @@ func (b *Buffer) DeleteBeforeCursor(count istrings.GraphemeNumber, columns istri
 
 	textUtf8 := utf8string.NewString(b.Text())
 	textBeforeCursor := textUtf8.Slice(0, int(b.cursorPosition))
-	graphemeLength := istrings.GraphemeCount(textBeforeCursor)
+	graphemeLength := istrings.GraphemeCountInString(textBeforeCursor)
 
 	start := istrings.RuneIndexNthGrapheme(textBeforeCursor, graphemeLength-count)
 	if start < 0 {

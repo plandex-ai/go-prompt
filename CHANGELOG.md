@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Add `strings.GraphemeNumber`, a type that represents the amount of grapheme clusters in a string (or an offset of a grapheme cluster in a string)
   - `type strings.GraphemeNumber int`
+- `func strings.GraphemeCountInString(text string) strings.GraphemeNumber`
+- `func strings.RuneCountInString(s string) strings.RuneNumber`
 - `func strings.RuneIndexNthGrapheme(text string, n strings.GraphemeNumber) strings.RuneNumber`
 - `func strings.RuneIndexNthColumn(text string, n strings.Width) strings.RuneNumber`
 - `func (*prompt.Document).GetCursorLeftPositionRunes(count strings.RuneNumber) strings.RuneNumber`
@@ -26,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Change signatures:
+  - `strings.RuneCount`
+    - from `func strings.RuneCount(s string) strings.RuneNumber`
+    - to `func strings.RuneCount(b []byte) strings.RuneNumber`
   - `prompt.ExecuteOnEnterCallback`
     - from `func(input string, indentSize int) (indent int, execute bool)`
     - to `func(buffer *prompt.Buffer, indentSize int) (indent int, execute bool)`
