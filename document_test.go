@@ -333,6 +333,50 @@ func TestDocument_TextBeforeCursor(t *testing.T) {
 	}
 }
 
+func TestDocument_LastLineIndentLevel(t *testing.T) {
+	tests := []struct {
+		document   *Document
+		indentSize int
+		want       int
+	}{
+		{
+			document: &Document{
+				Text: "line 1\nline 2\nline 3\n      line 4",
+			},
+			indentSize: 2,
+			want:       3,
+		},
+		{
+			document: &Document{
+				Text: "line 1\nline 2\nline 3\n      line 4",
+			},
+			indentSize: 1,
+			want:       6,
+		},
+		{
+			document: &Document{
+				Text: "line 1\nline 2\nline 3\n      line 4",
+			},
+			indentSize: 4,
+			want:       1,
+		},
+		{
+			document: &Document{
+				Text: "line 1\nline 2\nline 3\n      line 4",
+			},
+			indentSize: 0,
+			want:       0,
+		},
+	}
+
+	for i, tc := range tests {
+		got := tc.document.LastLineIndentLevel(tc.indentSize)
+		if got != tc.want {
+			t.Errorf("[%d] Should be %#v, got %#v", i, tc.want, got)
+		}
+	}
+}
+
 func TestDocument_TextAfterCursor(t *testing.T) {
 	pattern := []struct {
 		document *Document
@@ -1071,7 +1115,7 @@ func TestDocument_CursorPositionRowAndCol(t *testing.T) {
 	var cursorPositionTests = []struct {
 		document    *Document
 		expectedRow istrings.RuneNumber
-		expectedCol istrings.RuneNumber
+		expectedCol istrings.Width
 	}{
 		{
 			document:    &Document{Text: "line 1\nline 2\nline 3\n", cursorPosition: istrings.RuneCountInString("line 1\n" + "lin")},
@@ -1085,13 +1129,13 @@ func TestDocument_CursorPositionRowAndCol(t *testing.T) {
 		},
 	}
 	for _, test := range cursorPositionTests {
-		ac := test.document.CursorPositionRow()
-		if ac != test.expectedRow {
-			t.Errorf("Should be %#v, got %#v", test.expectedRow, ac)
+		r := test.document.CursorPositionRow()
+		if r != test.expectedRow {
+			t.Errorf("Should be %#v, got %#v", test.expectedRow, r)
 		}
-		ac = test.document.CursorPositionCol()
-		if ac != test.expectedCol {
-			t.Errorf("Should be %#v, got %#v", test.expectedCol, ac)
+		c := test.document.CursorPositionCol()
+		if c != test.expectedCol {
+			t.Errorf("Should be %#v, got %#v", test.expectedCol, c)
 		}
 	}
 }

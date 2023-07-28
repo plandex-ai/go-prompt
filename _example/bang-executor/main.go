@@ -17,7 +17,8 @@ func main() {
 	p.Run()
 }
 
-func ExecuteOnEnter(input string, indentSize int) (int, bool) {
+func ExecuteOnEnter(buffer *prompt.Buffer, indentSize int) (int, bool) {
+	input := buffer.Text()
 	char, _ := utf8.DecodeLastRuneInString(input)
 	return 0, char == '!'
 }

@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 28.07.2023
+
+[Diff](https://github.com/elk-language/go-prompt/compare/v1.0.3...elk-language:go-prompt:v1.1.0)
+
+### Fixed
+- Fix cursor movement for text with grapheme clusters like 🇵🇱, 🙆🏿‍♂️
+
+### Added
+- Add `strings.GraphemeNumber`, a type that represents the amount of grapheme clusters in a string (or an offset of a grapheme cluster in a string)
+  - `type strings.GraphemeNumber int`
+- `func strings.RuneIndexNthGrapheme(text string, n strings.GraphemeNumber) strings.RuneNumber`
+- `func strings.RuneIndexNthColumn(text string, n strings.Width) strings.RuneNumber`
+- `func (*prompt.Document).GetCursorLeftPositionRunes(count strings.RuneNumber) strings.RuneNumber`
+- `func (*prompt.Document).GetCursorRightPositionRunes(count strings.RuneNumber) strings.RuneNumber`
+- `func (*prompt.Document).LastLineIndentLevel(indentSize int) int`
+- `func (*prompt.Document).LastLineIndentSpaces() int`
+- `func (*prompt.Buffer).DeleteRunes(count strings.RuneNumber, col strings.Width, row int) string`
+- `func (*prompt.Buffer).DeleteBeforeCursorRunes(count strings.RuneNumber, col strings.Width, row int) string`
+
+### Changed
+- Change signatures:
+  - `prompt.ExecuteOnEnterCallback`
+    - from `func(input string, indentSize int) (indent int, execute bool)`
+    - to `func(buffer *prompt.Buffer, indentSize int) (indent int, execute bool)`
+  - `(*prompt.Document).CursorPositionCol`
+    - from `func (*prompt.Document).CursorPositionCol() (col strings.RuneNumber)`
+    - to `func (*prompt.Document).CursorPositionCol() (col strings.Width)`
+  - `(*prompt.Document).GetCursorRightPosition`
+    - from `func (*prompt.Document).GetCursorRightPosition(count strings.RuneNumber) strings.RuneNumber`
+    - to `func (*prompt.Document).GetCursorRightPosition(count strings.Width) strings.RuneNumber`
+  - `(*prompt.Document).GetCursorLeftPosition`
+    - from `func (*prompt.Document).GetCursorLeftPosition(count strings.RuneNumber) strings.RuneNumber`
+    - to `func (*prompt.Document).GetCursorLeftPosition(count strings.Width) strings.RuneNumber`
+  - `(*prompt.Document).GetCursorUpPosition`
+    - from `func (*prompt.Document).GetCursorUpPosition(count int, preferredColumn strings.RuneNumber) strings.RuneNumber`
+    - to `func (*prompt.Document).GetCursorUpPosition(count int, preferredColumn strings.Width) strings.RuneNumber`
+  - `(*prompt.Document).GetCursorDownPosition`
+    - from `func (*prompt.Document).GetCursorDownPosition(count int, preferredColumn strings.RuneNumber) strings.RuneNumber`
+    - to `func (*prompt.Document).GetCursorDownPosition(count int, preferredColumn strings.Width) strings.RuneNumber`
+  - `(*prompt.Document).TranslateRowColToIndex`
+    - from `func (*prompt.Document).TranslateRowColToIndex(row int, column strings.RuneNumber) strings.RuneNumber`
+    - to `func (*prompt.Document).TranslateRowColToIndex(row int, column strings.Width) strings.RuneNumber`
+  - `(*prompt.Buffer).Delete`
+    - from `func (*Buffer).Delete(count istrings.RuneNumber, col istrings.Width, row int) string`
+    - to `func (*Buffer).Delete(count istrings.GraphemeNumber, col istrings.Width, row int) string`
+  - `(*prompt.Buffer).DeleteBeforeCursor`
+    - from `func (*Buffer).DeleteBeforeCursor(count istrings.RuneNumber, col istrings.Width, row int) string`
+    - to `func (*Buffer).DeleteBeforeCursor(count istrings.GraphemeNumber, col istrings.Width, row int) string`
+
 ## [1.0.3] - 25.07.2023
 
 [Diff](https://github.com/elk-language/go-prompt/compare/v1.0.2...elk-language:go-prompt:v1.0.3)

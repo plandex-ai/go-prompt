@@ -37,6 +37,86 @@ func TestGetWidth(t *testing.T) {
 	}
 }
 
+func TestRuneIndexNthColumn(t *testing.T) {
+	tests := []struct {
+		text string
+		n    strings.Width
+		want strings.RuneNumber
+	}{
+		{
+			text: "foo",
+			n:    2,
+			want: 2,
+		},
+		{
+			text: "foo",
+			n:    10,
+			want: 3,
+		},
+		{
+			text: "foo",
+			n:    0,
+			want: 0,
+		},
+		{
+			text: "foo日本bar",
+			n:    7,
+			want: 5,
+		},
+		{
+			text: "foo🇵🇱🙆🏿‍♂️bar",
+			n:    7,
+			want: 10,
+		},
+	}
+
+	for _, tc := range tests {
+		if got := strings.RuneIndexNthColumn(tc.text, tc.n); got != tc.want {
+			t.Errorf("Should be %#v, but got %#v, for %#v", tc.want, got, tc.text)
+		}
+	}
+}
+
+func TestRuneIndexNthGrapheme(t *testing.T) {
+	tests := []struct {
+		text string
+		n    strings.GraphemeNumber
+		want strings.RuneNumber
+	}{
+		{
+			text: "foo",
+			n:    2,
+			want: 2,
+		},
+		{
+			text: "foo",
+			n:    10,
+			want: 3,
+		},
+		{
+			text: "foo",
+			n:    0,
+			want: 0,
+		},
+		{
+			text: "foo日本bar",
+			n:    7,
+			want: 7,
+		},
+		{
+			text: "foo🇵🇱🙆🏿‍♂️bar",
+			n:    7,
+			want: 12,
+		},
+	}
+
+	for _, tc := range tests {
+		if got := strings.RuneIndexNthGrapheme(tc.text, tc.n); got != tc.want {
+			t.Errorf("Should be %#v, but got %#v, for %#v", tc.want, got, tc.text)
+		}
+	}
+}
+
 func ExampleIndexNotByte() {
 	fmt.Println(strings.IndexNotByte("golang", 'g'))
 	fmt.Println(strings.IndexNotByte("golang", 'x'))

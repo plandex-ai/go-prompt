@@ -39,7 +39,7 @@ func GoLeftChar(p *Prompt) bool {
 }
 
 func DeleteWordBeforeCursor(p *Prompt) bool {
-	p.Buffer.DeleteBeforeCursor(
+	p.Buffer.DeleteBeforeCursorRunes(
 		istrings.RuneCountInString(p.Buffer.Document().GetWordBeforeCursorWithSpace()),
 		p.renderer.col,
 		p.renderer.row,

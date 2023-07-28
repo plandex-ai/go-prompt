@@ -33,7 +33,7 @@ type ExitChecker func(in string, breakline bool) bool
 // If this function returns true, the Executor callback will be called
 // otherwise a newline will be added to the buffer containing user input
 // and optionally indentation made up of `indentSize * indent` spaces.
-type ExecuteOnEnterCallback func(input string, indentSize int) (indent int, execute bool)
+type ExecuteOnEnterCallback func(buffer *Buffer, indentSize int) (indent int, execute bool)
 
 // Completer is a function that returns
 // a slice of suggestions for the given Document.
@@ -149,6 +149,11 @@ func Log(format string, a ...any) {
 	fmt.Fprintf(f, format+"\n", a...)
 }
 
+// Returns the configured indent size.
+func (p *Prompt) IndentSize() int {
+	return p.renderer.indentSize
+}
+
 func (p *Prompt) feed(b []byte) (shouldExit bool, rerender bool, userInput *UserInput) {
 	key := GetKey(b)
 	p.Buffer.lastKeyStroke = key
@@ -163,7 +168,7 @@ func (p *Prompt) feed(b []byte) (shouldExit bool, rerender bool, userInput *User
 
 	switch key {
 	case Enter, ControlJ, ControlM:
-		indent, execute := p.executeOnEnterCallback(p.Buffer.Text(), p.renderer.indentSize)
+		indent, execute := p.executeOnEnterCallback(p.Buffer, p.renderer.indentSize)
 		if !execute {
 			p.Buffer.NewLine(cols, rows, false)
 
@@ -306,13 +311,13 @@ keySwitch:
 				break keySwitch
 			}
 		}
-		p.Buffer.DeleteBeforeCursor(istrings.RuneNumber(p.renderer.indentSize), cols, rows)
+		p.Buffer.DeleteBeforeCursorRunes(istrings.RuneNumber(p.renderer.indentSize), cols, rows)
 		return true
 	default:
 		if s, ok := p.completion.GetSelectedSuggestion(); ok {
 			w := p.Buffer.Document().GetWordBeforeCursorUntilSeparator(p.completion.wordSeparator)
 			if w != "" {
-				p.Buffer.DeleteBeforeCursor(istrings.RuneNumber(len([]rune(w))), cols, rows)
+				p.Buffer.DeleteBeforeCursorRunes(istrings.RuneCountInString(w), cols, rows)
 			}
 			p.Buffer.InsertTextMoveCursor(s.Text, cols, rows, false)
 		}
@@ -344,13 +349,13 @@ func (p *Prompt) updateSuggestions(fn func()) {
 
 	// insert the new selection
 	if !prevSelected {
-		p.Buffer.DeleteBeforeCursor(p.completion.endCharIndex-p.completion.startCharIndex, cols, rows)
+		p.Buffer.DeleteBeforeCursorRunes(p.completion.endCharIndex-p.completion.startCharIndex, cols, rows)
 		p.Buffer.InsertTextMoveCursor(newSuggestion.Text, cols, rows, false)
 		return
 	}
 	// delete the previous selection
 	if !newSelected {
-		p.Buffer.DeleteBeforeCursor(
+		p.Buffer.DeleteBeforeCursorRunes(
 			istrings.RuneCountInString(prevSuggestion.Text)-(prevEnd-prevStart),
 			cols,
 			rows,
@@ -359,7 +364,7 @@ func (p *Prompt) updateSuggestions(fn func()) {
 	}
 
 	// delete previous selection and render the new one
-	p.Buffer.DeleteBeforeCursor(
+	p.Buffer.DeleteBeforeCursorRunes(
 		istrings.RuneCountInString(prevSuggestion.Text),
 		cols,
 		rows,

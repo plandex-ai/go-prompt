@@ -64,7 +64,7 @@ var emacsKeyBindings = []KeyBind{
 	{
 		Key: ControlK,
 		Fn: func(p *Prompt) bool {
-			p.Buffer.Delete(
+			p.Buffer.DeleteRunes(
 				istrings.RuneCountInString(p.Buffer.Document().CurrentLineAfterCursor()),
 				p.renderer.col,
 				p.renderer.row,
@@ -76,7 +76,7 @@ var emacsKeyBindings = []KeyBind{
 	{
 		Key: ControlU,
 		Fn: func(p *Prompt) bool {
-			p.Buffer.DeleteBeforeCursor(
+			p.Buffer.DeleteBeforeCursorRunes(
 				istrings.RuneCountInString(p.Buffer.Document().CurrentLineBeforeCursor()),
 				p.renderer.col,
 				p.renderer.row,

@@ -5,6 +5,7 @@ import (
 
 	"github.com/elk-language/go-prompt/debug"
 	istrings "github.com/elk-language/go-prompt/strings"
+	"golang.org/x/exp/utf8string"
 )
 
 // Buffer emulates the console buffer.
@@ -14,7 +15,7 @@ type Buffer struct {
 	startLine       int      // Line number of the first visible line in the terminal (0-indexed)
 	cursorPosition  istrings.RuneNumber
 	cacheDocument   *Document
-	preferredColumn istrings.RuneNumber // Remember the original column for the next up/down movement.
+	preferredColumn istrings.Width // Remember the original column for the next up/down movement.
 	lastKeyStroke   Key
 }
 
@@ -187,22 +188,59 @@ func (b *Buffer) CursorDown(count int, columns istrings.Width, rows int) bool {
 	return b.recalculateStartLine(columns, rows)
 }
 
-// DeleteBeforeCursor delete specified number of characters before cursor and return the deleted text.
-func (b *Buffer) DeleteBeforeCursor(count istrings.RuneNumber, columns istrings.Width, rows int) (deleted string) {
+// DeleteBeforeCursor delete specified number of graphemes before the cursor and returns the deleted text.
+func (b *Buffer) DeleteBeforeCursor(count istrings.GraphemeNumber, columns istrings.Width, rows int) string {
 	debug.Assert(count >= 0, "count should be positive")
+	if b.cursorPosition < 0 {
+		return ""
+	}
+
+	var deleted string
+
+	textUtf8 := utf8string.NewString(b.Text())
+	textBeforeCursor := textUtf8.Slice(0, int(b.cursorPosition))
+	graphemeLength := istrings.GraphemeCount(textBeforeCursor)
+
+	start := istrings.RuneIndexNthGrapheme(textBeforeCursor, graphemeLength-count)
+	if start < 0 {
+		start = 0
+	}
+	deleted = textUtf8.Slice(int(start), int(b.cursorPosition))
+	b.setDocument(
+		&Document{
+			Text:           textUtf8.Slice(0, int(start)) + textUtf8.Slice(int(b.cursorPosition), textUtf8.RuneCount()),
+			cursorPosition: b.cursorPosition - istrings.RuneCountInString(deleted),
+		},
+		columns,
+		rows,
+	)
+
+	b.recalculateStartLine(columns, rows)
+	b.updatePreferredColumn()
+	return deleted
+}
+
+// Deletes the specified number of runes before the cursor and returns the deleted text.
+func (b *Buffer) DeleteBeforeCursorRunes(count istrings.RuneNumber, columns istrings.Width, rows int) (deleted string) {
+	debug.Assert(count >= 0, "count should be positive")
+	if b.cursorPosition <= 0 {
+		return ""
+	}
 	r := []rune(b.Text())
 
-	if b.cursorPosition > 0 {
-		start := b.cursorPosition - count
-		if start < 0 {
-			start = 0
-		}
-		deleted = string(r[start:b.cursorPosition])
-		b.setDocument(&Document{
+	start := b.cursorPosition - count
+	if start < 0 {
+		start = 0
+	}
+	deleted = string(r[start:b.cursorPosition])
+	b.setDocument(
+		&Document{
 			Text:           string(r[:start]) + string(r[b.cursorPosition:]),
 			cursorPosition: b.cursorPosition - istrings.RuneNumber(len([]rune(deleted))),
-		}, columns, rows)
-	}
+		},
+		columns,
+		rows,
+	)
 	b.recalculateStartLine(columns, rows)
 	b.updatePreferredColumn()
 	return
@@ -217,8 +255,30 @@ func (b *Buffer) NewLine(columns istrings.Width, rows int, copyMargin bool) {
 	}
 }
 
-// Delete specified number of characters and Return the deleted text.
-func (b *Buffer) Delete(count istrings.RuneNumber, col istrings.Width, row int) string {
+// Deletes the specified number of graphemes and returns the deleted text.
+func (b *Buffer) Delete(count istrings.GraphemeNumber, col istrings.Width, row int) string {
+	textUtf8 := utf8string.NewString(b.Text())
+	if b.cursorPosition >= istrings.RuneCountInString(b.Text()) {
+		return ""
+	}
+
+	textAfterCursor := b.Document().TextAfterCursor()
+	textAfterCursorUtf8 := utf8string.NewString(textAfterCursor)
+
+	deletedRunes := textAfterCursorUtf8.Slice(0, int(istrings.RuneIndexNthGrapheme(textAfterCursor, count)))
+
+	b.setText(
+		textUtf8.Slice(0, int(b.cursorPosition))+textUtf8.Slice(int(b.cursorPosition)+int(istrings.RuneCountInString(deletedRunes)), textUtf8.RuneCount()),
+		col,
+		row,
+	)
+
+	deleted := string(deletedRunes)
+	return deleted
+}
+
+// Deletes the specified number of runes and returns the deleted text.
+func (b *Buffer) DeleteRunes(count istrings.RuneNumber, col istrings.Width, row int) string {
 	r := []rune(b.Text())
 	if b.cursorPosition < istrings.RuneNumber(len(r)) {
 		textAfterCursor := b.Document().TextAfterCursor()

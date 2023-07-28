@@ -41,6 +41,45 @@ func GetRuneWidth(char rune) Width {
 	return Width(runewidth.RuneWidth(char))
 }
 
+// Returns the rune index of the nth grapheme in the given text.
+func RuneIndexNthGrapheme(text string, n GraphemeNumber) RuneNumber {
+	g := uniseg.NewGraphemes(text)
+	var currentGraphemeIndex GraphemeNumber
+	var currentPosition RuneNumber
+
+	for g.Next() {
+		if currentGraphemeIndex >= n {
+			break
+		}
+
+		currentPosition += RuneNumber(len(g.Runes()))
+		currentGraphemeIndex++
+	}
+	return currentPosition
+}
+
+// Returns the rune index of the nth column (in terms of char width) in the given text.
+func RuneIndexNthColumn(text string, n Width) RuneNumber {
+	g := uniseg.NewGraphemes(text)
+	var currentColumnIndex Width
+	var currentPosition RuneNumber
+	var previousPosition RuneNumber
+
+	for g.Next() {
+		if currentColumnIndex > n {
+			currentPosition = previousPosition
+			break
+		}
+		if currentColumnIndex == n {
+			break
+		}
+		previousPosition = currentPosition
+		currentPosition += RuneNumber(len(g.Runes()))
+		currentColumnIndex += Width(g.Width())
+	}
+	return currentPosition
+}
+
 // IndexNotByte is similar with strings.IndexByte but showing the opposite behavior.
 func IndexNotByte(s string, c byte) ByteNumber {
 	n := len(s)

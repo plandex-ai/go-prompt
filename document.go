@@ -62,6 +62,32 @@ func (d *Document) CurrentRuneIndex() istrings.RuneNumber {
 	return d.cursorPosition
 }
 
+// Returns the amount of spaces that the last line of input
+// is indented with.
+func (d *Document) LastLineIndentSpaces() int {
+	input := d.Text
+	lastNewline := strings.LastIndexByte(input, '\n')
+	var spaces int
+	for i := lastNewline + 1; i < len(input); i++ {
+		b := input[i]
+		if b != ' ' {
+			break
+		}
+
+		spaces++
+	}
+
+	return spaces
+}
+
+// Returns the indentation level of the last line of input.
+func (d *Document) LastLineIndentLevel(indentSize int) int {
+	if indentSize == 0 {
+		return 0
+	}
+	return d.LastLineIndentSpaces() / indentSize
+}
+
 // TextBeforeCursor returns the text before the cursor.
 func (d *Document) TextBeforeCursor() string {
 	r := []rune(d.Text)
@@ -354,10 +380,11 @@ func (d *Document) TextEndPositionRow() (row istrings.RuneNumber) {
 }
 
 // CursorPositionCol returns the current column. (0-based.)
-func (d *Document) CursorPositionCol() (col istrings.RuneNumber) {
-	_, index := d.findLineStartIndex(d.cursorPosition)
-	col = d.cursorPosition - index
-	return
+func (d *Document) CursorPositionCol() (col istrings.Width) {
+	_, lineStartIndex := d.findLineStartIndex(d.cursorPosition)
+
+	text := utf8string.NewString(d.Text).Slice(int(lineStartIndex), int(d.cursorPosition))
+	return istrings.GetWidth(text)
 }
 
 // Returns the amount of runes that the cursors should be moved by.
@@ -420,18 +447,7 @@ func (d *Document) GetCursorRightPosition(count istrings.GraphemeNumber) istring
 		return 0
 	}
 
-	g := uniseg.NewGraphemes(text)
-	var currentGraphemeIndex istrings.GraphemeNumber
-	var currentPosition istrings.RuneNumber
-
-	for g.Next() {
-		if currentGraphemeIndex >= count {
-			break
-		}
-		currentPosition += istrings.RuneNumber(len(g.Runes()))
-		currentGraphemeIndex++
-	}
-	return currentPosition
+	return istrings.RuneIndexNthGrapheme(text, count)
 }
 
 // Returns the amount of runes that the cursors should be moved by.
@@ -466,8 +482,8 @@ func (d *Document) GetEndOfTextPosition(columns istrings.Width) Position {
 
 // GetCursorUpPosition return the relative cursor position (character index) where we would be
 // if the user pressed the arrow-up button.
-func (d *Document) GetCursorUpPosition(count int, preferredColumn istrings.RuneNumber) istrings.RuneNumber {
-	var col istrings.RuneNumber
+func (d *Document) GetCursorUpPosition(count int, preferredColumn istrings.Width) istrings.RuneNumber {
+	var col istrings.Width
 	if preferredColumn == -1 { // -1 means nil
 		col = d.CursorPositionCol()
 	} else {
@@ -483,8 +499,8 @@ func (d *Document) GetCursorUpPosition(count int, preferredColumn istrings.RuneN
 
 // GetCursorDownPosition return the relative cursor position (character index) where we would be if the
 // user pressed the arrow-down button.
-func (d *Document) GetCursorDownPosition(count int, preferredColumn istrings.RuneNumber) istrings.RuneNumber {
-	var col istrings.RuneNumber
+func (d *Document) GetCursorDownPosition(count int, preferredColumn istrings.Width) istrings.RuneNumber {
+	var col istrings.Width
 	if preferredColumn == -1 { // -1 means nil
 		col = d.CursorPositionCol()
 	} else {
@@ -516,7 +532,7 @@ func (d *Document) TranslateIndexToPosition(index istrings.RuneNumber) (int, int
 
 // TranslateRowColToIndex given a (row, col), return the corresponding index.
 // (Row and col params are 0-based.)
-func (d *Document) TranslateRowColToIndex(row int, column istrings.RuneNumber) (index istrings.RuneNumber) {
+func (d *Document) TranslateRowColToIndex(row int, column istrings.Width) (index istrings.RuneNumber) {
 	indices := d.lineStartIndices()
 	if row < 0 {
 		row = 0
@@ -524,23 +540,16 @@ func (d *Document) TranslateRowColToIndex(row int, column istrings.RuneNumber) (
 		row = len(indices) - 1
 	}
 	index = indices[row]
-	line := []rune(d.Lines()[row])
+	line := d.Lines()[row]
 
-	// python) result += max(0, min(col, len(line)))
-	if column > 0 || len(line) > 0 {
-		if column > istrings.RuneNumber(len(line)) {
-			index += istrings.RuneNumber(len(line))
-		} else {
-			index += istrings.RuneNumber(column)
-		}
-	}
+	index += istrings.RuneIndexNthColumn(line, column)
 
-	text := []rune(d.Text)
+	runeLength := istrings.RuneCountInString(d.Text)
 	// Keep in range. (len(self.text) is included, because the cursor can be
 	// right after the end of the text as well.)
 	// python) result = max(0, min(result, len(self.text)))
-	if index > istrings.RuneNumber(len(text)) {
-		index = istrings.RuneNumber(len(text))
+	if index > runeLength {
+		index = runeLength
 	}
 	if index < 0 {
 		index = 0
