@@ -63,9 +63,8 @@ func (d *Document) CurrentRuneIndex() istrings.RuneNumber {
 }
 
 // Returns the amount of spaces that the last line of input
-// is indented with.
-func (d *Document) LastLineIndentSpaces() int {
-	input := d.Text
+// of the given text is indented with.
+func (d *Document) IndentSpaces(input string) int {
 	lastNewline := strings.LastIndexByte(input, '\n')
 	var spaces int
 	for i := lastNewline + 1; i < len(input); i++ {
@@ -80,12 +79,34 @@ func (d *Document) LastLineIndentSpaces() int {
 	return spaces
 }
 
-// Returns the indentation level of the last line of input.
-func (d *Document) LastLineIndentLevel(indentSize int) int {
+// Returns the indentation level of the last line of the given text.
+func (d *Document) IndentLevel(input string, indentSize int) int {
 	if indentSize == 0 {
 		return 0
 	}
-	return d.LastLineIndentSpaces() / indentSize
+	return d.IndentSpaces(input) / indentSize
+}
+
+// Returns the amount of spaces that the last line of input
+// is indented with.
+func (d *Document) LastLineIndentSpaces() int {
+	return d.IndentSpaces(d.Text)
+}
+
+// Returns the indentation level of the last line of input.
+func (d *Document) LastLineIndentLevel(indentSize int) int {
+	return d.IndentLevel(d.Text, indentSize)
+}
+
+// Returns the amount of spaces that the current line the cursor is on
+// is indented with.
+func (d *Document) CurrentLineIndentSpaces() int {
+	return d.IndentSpaces(d.TextBeforeCursor())
+}
+
+// Returns the indentation level of the current line the cursor is on.
+func (d *Document) CurrentLineIndentLevel(indentSize int) int {
+	return d.IndentLevel(d.TextBeforeCursor(), indentSize)
 }
 
 // TextBeforeCursor returns the text before the cursor.

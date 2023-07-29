@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 29.07.2023
+
+[Diff](https://github.com/elk-language/go-prompt/compare/v1.1.2...elk-language:go-prompt:v1.1.3)
+
+### Added
+- `func (*prompt.Document).IndentSpaces(input string) int`
+- `func (*prompt.Document).IndentLevel(input string, indentSize int) int`
+- `func (*prompt.Document).CurrentLineIndentSpaces() int`
+- `func (*prompt.Document).CurrentLineIndentLevel(indentSize int) int`
+
 ## [1.1.2] - 29.07.2023
 
 [Diff](https://github.com/elk-language/go-prompt/compare/v1.1.1...elk-language:go-prompt:v1.1.2)
