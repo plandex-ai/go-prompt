@@ -152,6 +152,12 @@ func (p *Prompt) IndentSize() int {
 	return p.renderer.indentSize
 }
 
+// Get the number of columns that are available
+// for user input.
+func (p *Prompt) UserInputColumns() istrings.Width {
+	return p.renderer.UserInputColumns()
+}
+
 // Returns the current amount of columns that the terminal can display.
 func (p *Prompt) TerminalColumns() istrings.Width {
 	return p.renderer.col
@@ -619,6 +625,36 @@ func (p *Prompt) CursorDown(count int) bool {
 	p.renderer.move(previousCursor, newCursor)
 	p.renderer.flush()
 	return false
+}
+
+// Deletes the specified number of graphemes before the cursor and returns the deleted text.
+func (p *Prompt) DeleteBeforeCursor(count istrings.GraphemeNumber) string {
+	return p.buffer.DeleteBeforeCursor(count, p.UserInputColumns(), p.renderer.row)
+}
+
+// Deletes the specified number of runes before the cursor and returns the deleted text.
+func (p *Prompt) DeleteBeforeCursorRunes(count istrings.RuneNumber) string {
+	return p.buffer.DeleteBeforeCursorRunes(count, p.UserInputColumns(), p.renderer.row)
+}
+
+// Deletes the specified number of graphemes and returns the deleted text.
+func (p *Prompt) Delete(count istrings.GraphemeNumber) string {
+	return p.buffer.Delete(count, p.UserInputColumns(), p.renderer.row)
+}
+
+// Deletes the specified number of runes and returns the deleted text.
+func (p *Prompt) DeleteRunes(count istrings.RuneNumber) string {
+	return p.buffer.DeleteRunes(count, p.UserInputColumns(), p.renderer.row)
+}
+
+// Insert string into the buffer without moving the cursor.
+func (p *Prompt) InsertText(text string, overwrite bool) {
+	p.buffer.InsertText(text, overwrite)
+}
+
+// Insert string into the buffer and move the cursor.
+func (p *Prompt) InsertTextMoveCursor(text string, overwrite bool) {
+	p.buffer.InsertTextMoveCursor(text, p.UserInputColumns(), p.renderer.row, overwrite)
 }
 
 func (p *Prompt) Close() {

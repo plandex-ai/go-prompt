@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 29.07.2023
+
+[Diff](https://github.com/elk-language/go-prompt/compare/v1.1.1...elk-language:go-prompt:v1.1.2)
+
+### Added
+- `func (*prompt.Prompt).DeleteBeforeCursor(count strings.GraphemeNumber) string`
+- `func (*prompt.Prompt).DeleteBeforeCursorRunes(count strings.RuneNumber) string`
+- `func (*prompt.Prompt).Delete(count strings.GraphemeNumber) string`
+- `func (*prompt.Prompt).DeleteRunes(count strings.RuneNumber) string`
+- `func (*prompt.Prompt).InsertText(text string, overwrite bool)`
+- `func (*prompt.Prompt).InsertTextMoveCursor(text string, overwrite bool)`
+- `func (*prompt.Prompt).UserInputColumns() strings.Width`
+
 ## [1.1.1] - 28.07.2023
 
 [Diff](https://github.com/elk-language/go-prompt/compare/v1.1.0...elk-language:go-prompt:v1.1.1)

@@ -188,7 +188,7 @@ func (b *Buffer) CursorDown(count int, columns istrings.Width, rows int) bool {
 	return b.recalculateStartLine(columns, rows)
 }
 
-// DeleteBeforeCursor delete specified number of graphemes before the cursor and returns the deleted text.
+// Deletes the specified number of graphemes before the cursor and returns the deleted text.
 func (b *Buffer) DeleteBeforeCursor(count istrings.GraphemeNumber, columns istrings.Width, rows int) string {
 	debug.Assert(count >= 0, "count should be positive")
 	if b.cursorPosition < 0 {
