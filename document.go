@@ -109,6 +109,25 @@ func (d *Document) CurrentLineIndentLevel(indentSize int) int {
 	return d.IndentLevel(d.TextBeforeCursor(), indentSize)
 }
 
+// Returns the amount of spaces that the previous line (relative to the cursor)
+// is indented with.
+func (d *Document) PreviousLineIndentSpaces() int {
+	line, ok := d.PreviousLine()
+	if !ok {
+		return 0
+	}
+	return d.IndentSpaces(line)
+}
+
+// Returns the indentation level of the previous line (relative to the cursor).
+func (d *Document) PreviousLineIndentLevel(indentSize int) int {
+	line, ok := d.PreviousLine()
+	if !ok {
+		return 0
+	}
+	return d.IndentLevel(line, indentSize)
+}
+
 // TextBeforeCursor returns the text before the cursor.
 func (d *Document) TextBeforeCursor() string {
 	r := []rune(d.Text)
@@ -347,6 +366,21 @@ func (d *Document) CurrentLineAfterCursor() string {
 // consists of just one line, it equals `text`.
 func (d *Document) CurrentLine() string {
 	return d.CurrentLineBeforeCursor() + d.CurrentLineAfterCursor()
+}
+
+// Return the text of the previous line (relative to the cursor).
+// If the cursor is on the first line then false is returned in the second value
+// to signify that there is no previous line.
+func (d *Document) PreviousLine() (s string, ok bool) {
+	indices := d.lineStartIndices()
+	pos := bisect.Right(indices, d.cursorPosition) - 1
+	if pos == 0 {
+		return "", false
+	}
+
+	prevLineStartIndex := indices[pos-1]
+	lineStartIndex := indices[pos]
+	return d.Text[prevLineStartIndex : lineStartIndex-1], true
 }
 
 // Array pointing to the start indices of all the lines.

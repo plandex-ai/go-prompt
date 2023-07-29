@@ -377,6 +377,46 @@ func TestDocument_LastLineIndentLevel(t *testing.T) {
 	}
 }
 
+func TestDocument_PreviousLine(t *testing.T) {
+	tests := []struct {
+		document *Document
+		want     string
+		ok       bool
+	}{
+		{
+			document: &Document{
+				Text:           "line 1\nline 2\nline 3\n      line 4",
+				cursorPosition: 32,
+			},
+			want: "line 3",
+			ok:   true,
+		},
+		{
+			document: &Document{
+				Text:           "line 1\nline 2\nline 3\n      line 4",
+				cursorPosition: 19,
+			},
+			want: "line 2",
+			ok:   true,
+		},
+		{
+			document: &Document{
+				Text:           "line 1\nline 2\nline 3\n      line 4",
+				cursorPosition: 1,
+			},
+			want: "",
+			ok:   false,
+		},
+	}
+
+	for i, tc := range tests {
+		got, ok := tc.document.PreviousLine()
+		if got != tc.want || ok != tc.ok {
+			t.Errorf("[%d] Should be (%#v, %#v), got (%#v, %#v)", i, tc.want, tc.ok, got, ok)
+		}
+	}
+}
+
 func TestDocument_TextAfterCursor(t *testing.T) {
 	pattern := []struct {
 		document *Document
