@@ -34,11 +34,11 @@ func TestBisectRight(t *testing.T) {
 }
 
 func BenchmarkRight(b *testing.B) {
-	rand.Seed(0)
+	r := rand.New(rand.NewSource(0))
 
 	for _, l := range []int{10, 1e2, 1e3, 1e4} {
-		x := rand.Perm(l)
-		insertion := rand.Int()
+		x := r.Perm(l)
+		insertion := r.Int()
 
 		b.Run(fmt.Sprintf("arrayLength=%d", l), func(b *testing.B) {
 			b.ResetTimer()
