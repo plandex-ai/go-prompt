@@ -37,13 +37,11 @@ func (t *PosixReader) Open() error {
 
 // Close should be called after stopping input
 func (t *PosixReader) Close() error {
-	if err := syscall.Close(t.fd); err != nil {
-		return err
-	}
 	if err := term.Restore(); err != nil {
+		_ = syscall.Close(t.fd)
 		return err
 	}
-	return nil
+	return syscall.Close(t.fd)
 }
 
 // Read returns byte array.
