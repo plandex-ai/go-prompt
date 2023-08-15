@@ -160,7 +160,6 @@ func executor(in string) {
 
 func completer(in prompt.Document) ([]prompt.Suggest, istrings.RuneNumber, istrings.RuneNumber) {
 	endIndex := in.CurrentRuneIndex()
-	in.
 	w := in.GetWordBeforeCursor()
 	if w == "" {
 		return []prompt.Suggest{}, 0, 0
