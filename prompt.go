@@ -227,7 +227,7 @@ func (p *Prompt) feed(b []byte) (shouldExit bool, rerender bool, userInput *User
 	case Down, ControlN:
 		endOfTextRow := p.buffer.Document().TextEndPositionRow()
 		row := p.buffer.Document().CursorPositionRow()
-		if endOfTextRow > row {
+		if endOfTextRow >= row {
 			rerender = p.CursorDown(1)
 			return false, rerender, nil
 		}
@@ -273,7 +273,7 @@ func (p *Prompt) handleCompletionKeyBinding(b []byte, key Key, completing bool) 
 keySwitch:
 	switch key {
 	case Down:
-		if completing || p.completionOnDown {
+		if completing || (p.completionOnDown && len(p.completion.tmp) > 0) {
 			p.updateSuggestions(func() {
 				p.completion.Next()
 			})

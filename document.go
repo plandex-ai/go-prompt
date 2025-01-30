@@ -555,14 +555,33 @@ func (d *Document) GetCursorUpPosition(count int, preferredColumn istrings.Width
 // GetCursorDownPosition return the relative cursor position (character index) where we would be if the
 // user pressed the arrow-down button.
 func (d *Document) GetCursorDownPosition(count int, preferredColumn istrings.Width) istrings.RuneNumber {
+	// If the Document has no lines at all, bail out early
+	if len(d.Lines()) == 0 {
+		return 0
+	}
+
 	var col istrings.Width
-	if preferredColumn == -1 { // -1 means nil
+	if preferredColumn == -1 {
+		// -1 means “use current column”
 		col = d.CursorPositionCol()
 	} else {
 		col = preferredColumn
 	}
-	row := int(d.CursorPositionRow()) + count
-	return d.TranslateRowColToIndex(row, col) - d.cursorPosition
+
+	// Figure out where we’d like to move
+	desiredRow := int(d.CursorPositionRow()) + count
+
+	// Clamp the new row to within [0, len(d.Lines())-1]
+	if desiredRow < 0 {
+		desiredRow = 0
+	} else if desiredRow >= len(d.Lines()) {
+		desiredRow = len(d.Lines()) - 1
+	}
+
+	// Translate that row & column to a buffer index,
+	// then subtract current cursor position to get how many runes we move
+	delta := d.TranslateRowColToIndex(desiredRow, col) - d.cursorPosition
+	return delta
 }
 
 // Lines returns the array of all the lines.
