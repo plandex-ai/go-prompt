@@ -1,4 +1,4 @@
-module github.com/elk-language/go-prompt
+module github.com/plandex-ai/go-prompt
 
 go 1.19
 
