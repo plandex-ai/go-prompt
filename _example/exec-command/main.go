@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/exec"
 
-	prompt "github.com/elk-language/go-prompt"
+	prompt "github.com/plandex-ai/go-prompt"
 )
 
 func executor(t string) {

@@ -5,8 +5,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/elk-language/go-prompt"
-	"github.com/elk-language/go-prompt/strings"
+	"github.com/plandex-ai/go-prompt"
+	"github.com/plandex-ai/go-prompt/strings"
 )
 
 func main() {

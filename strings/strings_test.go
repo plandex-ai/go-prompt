@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/elk-language/go-prompt/strings"
+	"github.com/plandex-ai/go-prompt/strings"
 )
 
 func TestGetWidth(t *testing.T) {

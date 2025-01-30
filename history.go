@@ -1,7 +1,7 @@
 package prompt
 
 import (
-	istrings "github.com/elk-language/go-prompt/strings"
+	istrings "github.com/plandex-ai/go-prompt/strings"
 )
 
 // History stores the texts that are entered.

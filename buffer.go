@@ -3,8 +3,8 @@ package prompt
 import (
 	"strings"
 
-	"github.com/elk-language/go-prompt/debug"
-	istrings "github.com/elk-language/go-prompt/strings"
+	"github.com/plandex-ai/go-prompt/debug"
+	istrings "github.com/plandex-ai/go-prompt/strings"
 	"golang.org/x/exp/utf8string"
 )
 

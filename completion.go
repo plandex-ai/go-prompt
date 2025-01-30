@@ -3,9 +3,9 @@ package prompt
 import (
 	"strings"
 
-	"github.com/elk-language/go-prompt/debug"
-	istrings "github.com/elk-language/go-prompt/strings"
 	runewidth "github.com/mattn/go-runewidth"
+	"github.com/plandex-ai/go-prompt/debug"
+	istrings "github.com/plandex-ai/go-prompt/strings"
 )
 
 const (

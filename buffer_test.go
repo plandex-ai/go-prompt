@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	istrings "github.com/elk-language/go-prompt/strings"
+	istrings "github.com/plandex-ai/go-prompt/strings"
 )
 
 func TestNewBuffer(t *testing.T) {
