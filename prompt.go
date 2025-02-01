@@ -176,9 +176,12 @@ func (p *Prompt) Buffer() *Buffer {
 func (p *Prompt) feed(b []byte) (shouldExit bool, rerender bool, userInput *UserInput) {
 	key := GetKey(b)
 	p.buffer.lastKeyStroke = key
+
 	// completion
 	completing := p.completion.Completing()
+
 	if p.handleCompletionKeyBinding(b, key, completing) {
+
 		return false, true, nil
 	}
 
@@ -227,7 +230,7 @@ func (p *Prompt) feed(b []byte) (shouldExit bool, rerender bool, userInput *User
 	case Down, ControlN:
 		endOfTextRow := p.buffer.Document().TextEndPositionRow()
 		row := p.buffer.Document().CursorPositionRow()
-		if endOfTextRow >= row {
+		if endOfTextRow > row {
 			rerender = p.CursorDown(1)
 			return false, rerender, nil
 		}
