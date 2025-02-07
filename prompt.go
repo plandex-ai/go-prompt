@@ -177,6 +177,12 @@ func (p *Prompt) feed(b []byte) (shouldExit bool, rerender bool, userInput *User
 	key := GetKey(b)
 	p.buffer.lastKeyStroke = key
 
+	// Reset history navigation when user types any character
+	// (except up/down arrows which are handled separately)
+	if key != Up && key != Down && key != ControlP && key != ControlN {
+		p.history.ResetNavigation()
+	}
+
 	// completion
 	completing := p.completion.Completing()
 
@@ -267,6 +273,11 @@ func (p *Prompt) feed(b []byte) (shouldExit bool, rerender bool, userInput *User
 }
 
 func (p *Prompt) handleCompletionKeyBinding(b []byte, key Key, completing bool) (handled bool) {
+	// Skip completions if we're navigating history
+	if p.history.isNavigating {
+		return false
+	}
+
 	p.completion.shouldUpdate = true
 	cols := p.renderer.UserInputColumns()
 	rows := p.renderer.row
@@ -665,4 +676,9 @@ func (p *Prompt) Close() {
 		debug.AssertNoError(p.reader.Close())
 	}
 	p.renderer.Close()
+}
+
+// IsNavigatingHistory returns true if the user is currently navigating through command history
+func (p *Prompt) IsNavigatingHistory() bool {
+	return p.history.isNavigating
 }

@@ -6,9 +6,10 @@ import (
 
 // History stores the texts that are entered.
 type History struct {
-	histories []string
-	tmp       []string
-	selected  int
+	histories    []string
+	tmp          []string
+	selected     int
+	isNavigating bool
 }
 
 // Add to add text in history.
@@ -23,6 +24,7 @@ func (h *History) Clear() {
 	copy(h.tmp, h.histories)
 	h.tmp = append(h.tmp, "")
 	h.selected = len(h.tmp) - 1
+	h.isNavigating = false
 }
 
 // Older saves a buffer of current line and get a buffer of previous line by up-arrow.
@@ -32,8 +34,8 @@ func (h *History) Older(buf *Buffer, columns istrings.Width, rows int) (new *Buf
 		return buf, false
 	}
 	h.tmp[h.selected] = buf.Text()
-
 	h.selected--
+	h.isNavigating = true
 	new = NewBuffer()
 	new.InsertTextMoveCursor(h.tmp[h.selected], columns, rows, false)
 	return new, true
@@ -43,14 +45,19 @@ func (h *History) Older(buf *Buffer, columns istrings.Width, rows int) (new *Buf
 // The changes of line buffers are stored until new history is created.
 func (h *History) Newer(buf *Buffer, columns istrings.Width, rows int) (new *Buffer, changed bool) {
 	if h.selected >= len(h.tmp)-1 {
+		h.isNavigating = false
 		return buf, false
 	}
 	h.tmp[h.selected] = buf.Text()
-
 	h.selected++
 	new = NewBuffer()
 	new.InsertTextMoveCursor(h.tmp[h.selected], columns, rows, false)
 	return new, true
+}
+
+// ResetNavigation resets the navigation state
+func (h *History) ResetNavigation() {
+	h.isNavigating = false
 }
 
 // NewHistory returns new history object.
