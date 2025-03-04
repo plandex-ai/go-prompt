@@ -347,13 +347,13 @@ keySwitch:
 		p.buffer.DeleteBeforeCursorRunes(istrings.RuneNumber(p.renderer.indentSize), cols, rows)
 		return true
 	default:
-		if s, ok := p.completion.GetSelectedSuggestion(); ok {
-			w := p.buffer.Document().GetWordBeforeCursorUntilSeparator(p.completion.wordSeparator)
-			if w != "" {
-				p.buffer.DeleteBeforeCursorRunes(istrings.RuneCountInString(w), cols, rows)
-			}
-			p.buffer.InsertTextMoveCursor(s.Text, cols, rows, false)
-		}
+		// if s, ok := p.completion.GetSelectedSuggestion(); ok {
+		// 	w := p.buffer.Document().Text[p.completion.startCharIndex:p.completion.endCharIndex]
+		// 	if w != "" {
+		// 		p.buffer.DeleteBeforeCursorRunes(istrings.RuneCountInString(w), cols, rows)
+		// 	}
+		// 	p.buffer.InsertTextMoveCursor(s.Text, cols, rows, false)
+		// }
 		if completionLen > 0 {
 			p.completionReset = true
 		}
